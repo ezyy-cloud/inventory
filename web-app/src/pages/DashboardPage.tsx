@@ -1,17 +1,50 @@
 import { AlertTriangle, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { QueryErrorBanner } from '../components/QueryErrorBanner'
 import { StatusPill } from '../components/StatusPill'
 import {
   useDashboardStats,
+  useDevicesByCategory,
+  useMRRByClient,
+  useMRRByPlan,
+  useMRRTrend,
+  useOverdueInvoices,
   useOverdueSubscriptions,
   useRenewalAlerts,
   useSubscriptionsEndingWithin,
-  useOverdueInvoices,
   useDevicesInMaintenance,
-  useMRRTrend,
 } from '../hooks/useDashboard'
 import { useOverdueInvoicesSummary } from '../hooks/useInvoices'
+import { useDeviceStatusBreakdown } from '../hooks/useReports'
+import { DEVICE_TYPE_LABELS } from '../types'
+
+const CHART_COLORS = [
+  'oklch(0.65 0 0)',
+  'oklch(0.55 0 0)',
+  'oklch(0.35 0 0)',
+  'oklch(0.8 0 0)',
+  'oklch(0.4 0 0)',
+]
+
+const STATUS_ORDER = ['in_stock', 'assigned', 'maintenance', 'retired', 'lost'] as const
+
+function formatStatusLabel(status: string): string {
+  return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
 
 function MiniBar({ value }: { value: number }) {
   return (
@@ -39,6 +72,10 @@ export function DashboardPage() {
   const { data: overdueSummary } = useOverdueInvoicesSummary()
   const { data: maintenanceDevices } = useDevicesInMaintenance(5, 7)
   const { data: mrrTrend } = useMRRTrend(6)
+  const { data: devicesByCategory, isLoading: devicesByCategoryLoading } = useDevicesByCategory()
+  const { data: mrrByPlan, isLoading: mrrByPlanLoading } = useMRRByPlan()
+  const { data: mrrByClient, isLoading: mrrByClientLoading } = useMRRByClient(10)
+  const { data: statusBreakdown, isLoading: statusBreakdownLoading } = useDeviceStatusBreakdown()
 
   const hasError = statsError ?? renewalsError ?? overdueError
   const refetchAll = () => {
@@ -56,7 +93,7 @@ export function DashboardPage() {
           onRetry={refetchAll}
         />
       )}
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <StatCard
           label="Total Devices"
           value={statsLoading ? '—' : String(stats?.totalDevices ?? 0)}
@@ -64,6 +101,14 @@ export function DashboardPage() {
         <StatCard
           label="Assigned"
           value={statsLoading ? '—' : String(stats?.assignedDevices ?? 0)}
+        />
+        <StatCard
+          label="Available"
+          value={statusBreakdownLoading ? '—' : String(statusBreakdown?.find((r) => r.status === 'in_stock')?.count ?? 0)}
+        />
+        <StatCard
+          label="Active Subscriptions"
+          value={statsLoading ? '—' : String(stats?.activeSubscriptions ?? 0)}
         />
         <StatCard
           label="MRR"
@@ -81,6 +126,239 @@ export function DashboardPage() {
               : `USD ${(stats?.providerDue ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
           }
         />
+      </section>
+
+      {((overdueInvs?.length ?? 0) > 0 || (maintenanceDevices?.length ?? 0) > 0) && (
+        <section className="card-shadow rounded-3xl border border-black/10 bg-white p-4">
+          <p className="text-sm text-black">
+            <Link
+              to="/invoices?status=overdue"
+              className="font-semibold text-black underline transition hover:opacity-80"
+            >
+              {overdueInvs?.length ?? 0} overdue invoice(s)
+            </Link>
+            {' · '}
+            <Link
+              to="/devices?status=maintenance"
+              className="font-semibold text-black underline transition hover:opacity-80"
+            >
+              {maintenanceDevices?.length ?? 0} device(s) in maintenance &gt;7 days
+            </Link>
+          </p>
+        </section>
+      )}
+
+      <section className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-black">Devices by status</h2>
+          <Link
+            to="/devices"
+            className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:opacity-80"
+          >
+            View Inventory <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+        {statusBreakdownLoading ? (
+          <p className="mt-6 text-sm text-black/60">Loading…</p>
+        ) : (statusBreakdown?.length ?? 0) > 0 ? (
+          <div className="mt-6 h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={STATUS_ORDER.map((status) => {
+                  const row = statusBreakdown?.find((r) => r.status === status)
+                  return {
+                    name: formatStatusLabel(status),
+                    count: row?.count ?? 0,
+                  }
+                })}
+                layout="vertical"
+                margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
+              >
+                <XAxis type="number" tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(value: number | undefined) => [value ?? 0, 'Devices']} />
+                <Bar dataKey="count" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <p className="mt-6 text-sm text-black/60">No device data.</p>
+        )}
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-black">Devices by category</h2>
+            <Link
+              to="/devices"
+              className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:opacity-80"
+            >
+              View Inventory <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          {devicesByCategoryLoading ? (
+            <p className="mt-6 text-sm text-black/60">Loading…</p>
+          ) : (devicesByCategory?.length ?? 0) > 0 ? (
+            <div className="mt-6 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[...(devicesByCategory ?? [])]
+                  .sort((a, b) => b.count - a.count)
+                  .map((r) => ({
+                    name: DEVICE_TYPE_LABELS[r.device_type as keyof typeof DEVICE_TYPE_LABELS] ?? r.device_type,
+                    count: r.count,
+                  }))}
+                  layout="vertical"
+                  margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
+                >
+                  <XAxis type="number" tick={{ fontSize: 11 }} />
+                  <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
+                  <Tooltip formatter={(value: number | undefined) => [value ?? 0, 'Devices']} />
+                  <Bar dataKey="count" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-black/60">No device data.</p>
+          )}
+        </div>
+
+        <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-black">MRR breakdown</h2>
+            <Link
+              to="/subscriptions"
+              className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:opacity-80"
+            >
+              Subscriptions <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          {mrrByPlanLoading ? (
+            <p className="mt-6 text-sm text-black/60">Loading…</p>
+          ) : (mrrByPlan?.length ?? 0) > 0 ? (
+            <div className="mt-6 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={(mrrByPlan ?? []).map((r) => ({ name: r.plan_name, value: r.mrr }))}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  >
+                    {(mrrByPlan ?? []).map((r, i) => (
+                      <Cell key={r.plan_name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number | undefined) => [`USD ${(value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 'MRR']}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-black/60">No MRR data.</p>
+          )}
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-black">Revenue (from invoices, last 6 months)</h2>
+              <p className="text-xs text-black/60">From paid, sent, and overdue invoices.</p>
+            </div>
+            <Link
+              to="/reports"
+              className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:opacity-80"
+            >
+              Reports <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          {(mrrTrend?.length ?? 0) > 0 ? (
+            <div className="mt-6 h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={mrrTrend ?? []} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+                  <Tooltip
+                    formatter={(value: number | undefined) => [`USD ${(value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 'Revenue']}
+                    labelFormatter={(label) => `Month: ${label}`}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke={CHART_COLORS[0]}
+                    strokeWidth={2}
+                    dot={{ fill: CHART_COLORS[0] }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-black/60">No revenue trend data.</p>
+          )}
+        </div>
+
+        <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-black">Cost centers (MRR by client)</h2>
+            <Link
+              to="/clients"
+              className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:opacity-80"
+            >
+              View clients <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          {mrrByClientLoading ? (
+            <p className="mt-6 text-sm text-black/60">Loading…</p>
+          ) : (mrrByClient?.length ?? 0) > 0 ? (
+            <div className="mt-6 space-y-4">
+              <div className="h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={(mrrByClient ?? []).map((r) => ({
+                      name: r.client_name.length > 20 ? r.client_name.slice(0, 20) + '…' : r.client_name,
+                      mrr: r.mrr,
+                      fullName: r.client_name,
+                    }))}
+                    layout="vertical"
+                    margin={{ top: 4, right: 60, left: 0, bottom: 4 }}
+                  >
+                    <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+                    <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
+                    <Tooltip
+                      formatter={(value: number | undefined, _n, props: { payload?: { fullName?: string } }) => [
+                        `USD ${(value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+                        props?.payload?.fullName ?? 'MRR',
+                      ]}
+                    />
+                    <Bar dataKey="mrr" fill={CHART_COLORS[1]} radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <ul className="max-h-32 space-y-1 overflow-y-auto text-xs">
+                {(mrrByClient ?? []).map((r) => (
+                  <li key={r.client_id} className="flex justify-between gap-2">
+                    <Link to={`/clients/${r.client_id}`} className="truncate font-medium text-black hover:underline">
+                      {r.client_name}
+                    </Link>
+                    <span className="shrink-0 text-black/60">
+                      USD {r.mrr.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="mt-6 text-sm text-black/60">No client MRR data.</p>
+          )}
+        </div>
       </section>
 
       {(overdueInvs?.length ?? 0) > 0 && (
@@ -207,29 +485,21 @@ export function DashboardPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold text-black">Active Subscriptions</span>
-                <span className="text-xs text-black/60">{stats?.activeSubscriptions ?? 0}</span>
+                <span className="text-xs text-black/60">
+                  {stats?.activeSubscriptions ?? 0}
+                  {stats?.assignedDevices != null && stats.assignedDevices > 0
+                    ? ` · ${Math.round(((stats?.activeSubscriptions ?? 0) / stats.assignedDevices) * 100)}% of assigned`
+                    : ''}
+                </span>
               </div>
-              <MiniBar value={100} />
+              <MiniBar
+                value={
+                  (stats?.assignedDevices ?? 0) > 0
+                    ? ((stats?.activeSubscriptions ?? 0) / (stats?.assignedDevices ?? 1)) * 100
+                    : 0
+                }
+              />
             </div>
-            {(mrrTrend?.length ?? 0) > 0 && (
-              <div className="mt-6 space-y-2">
-                <p className="text-sm font-semibold text-black">MRR trend (last 6 months)</p>
-                <div className="flex gap-1">
-                  {mrrTrend?.map(({ month, revenue }) => {
-                    const max = Math.max(...(mrrTrend?.map((r) => r.revenue) ?? [1]), 1)
-                    return (
-                      <div
-                        key={month}
-                        className="flex-1 rounded bg-black/20"
-                        style={{ height: `${(revenue / max) * 60}px`, minHeight: 4 }}
-                        title={`${month}: USD ${revenue.toLocaleString()}`}
-                      />
-                    )
-                  })}
-                </div>
-                <p className="text-xs text-black/60">{mrrTrend?.[0]?.month ?? ''} – {mrrTrend?.[mrrTrend.length - 1]?.month ?? ''}</p>
-              </div>
-            )}
           </div>
         </div>
       </section>

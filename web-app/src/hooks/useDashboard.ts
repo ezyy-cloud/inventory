@@ -1,7 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
-import { calculateMRR } from '../lib/mrr'
+import { calculateMRR, monthlyEquivalent } from '../lib/mrr'
 import type { AlertSeverity, UnifiedAlert } from '../types'
+
+export type DevicesByCategoryRow = { device_type: string; count: number }
+export type MRRByPlanRow = { plan_name: string; mrr: number }
+export type MRRByDeviceTypeRow = { device_type: string; mrr: number }
+export type MRRByClientRow = { client_id: string; client_name: string; mrr: number }
 
 const SEVERITY_ORDER: Record<AlertSeverity, number> = { high: 0, medium: 1, low: 2 }
 
@@ -36,6 +41,101 @@ export function useDashboardStats() {
         mrr,
         providerDue,
       }
+    },
+  })
+}
+
+export function useDevicesByCategory() {
+  return useQuery<DevicesByCategoryRow[]>({
+    queryKey: ['dashboard-devices-by-category'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('devices').select('device_type')
+      if (error) throw error
+      const byType = (data ?? []).reduce(
+        (acc, d) => {
+          const t = d.device_type ?? 'other'
+          acc[t] = (acc[t] ?? 0) + 1
+          return acc
+        },
+        {} as Record<string, number>,
+      )
+      return Object.entries(byType).map(([device_type, count]) => ({ device_type, count }))
+    },
+  })
+}
+
+export function useMRRByPlan() {
+  return useQuery<MRRByPlanRow[]>({
+    queryKey: ['dashboard-mrr-by-plan'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('plan_name, amount, billing_cycle')
+        .eq('status', 'active')
+      if (error) throw error
+      const byPlan: Record<string, number> = {}
+      for (const row of data ?? []) {
+        const name = row.plan_name ?? '—'
+        const mrr = monthlyEquivalent(row.amount ?? 0, row.billing_cycle ?? null)
+        byPlan[name] = (byPlan[name] ?? 0) + mrr
+      }
+      return Object.entries(byPlan)
+        .map(([plan_name, mrr]) => ({ plan_name, mrr }))
+        .filter((r) => r.mrr > 0)
+        .sort((a, b) => b.mrr - a.mrr)
+    },
+  })
+}
+
+export function useMRRByDeviceType() {
+  return useQuery<MRRByDeviceTypeRow[]>({
+    queryKey: ['dashboard-mrr-by-device-type'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('amount, billing_cycle, device_id, devices(device_type)')
+        .eq('status', 'active')
+      if (error) throw error
+      const byType: Record<string, number> = {}
+      for (const row of data ?? []) {
+        const dev = (row as { devices?: { device_type?: string } | { device_type?: string }[] | null }).devices
+        const deviceType = Array.isArray(dev) ? dev[0]?.device_type : dev?.device_type
+        const key = deviceType ?? 'unassigned'
+        const mrr = monthlyEquivalent(row.amount ?? 0, row.billing_cycle ?? null)
+        byType[key] = (byType[key] ?? 0) + mrr
+      }
+      return Object.entries(byType)
+        .map(([device_type, mrr]) => ({ device_type, mrr }))
+        .filter((r) => r.mrr > 0)
+        .sort((a, b) => b.mrr - a.mrr)
+    },
+  })
+}
+
+export function useMRRByClient(limit = 10) {
+  return useQuery<MRRByClientRow[]>({
+    queryKey: ['dashboard-mrr-by-client', limit],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('client_id, amount, billing_cycle, clients(id, name)')
+        .eq('status', 'active')
+      if (error) throw error
+      const byClient: Record<string, { name: string; mrr: number }> = {}
+      for (const row of data ?? []) {
+        const clientId = row.client_id ?? ''
+        const clients = (row as { clients?: { name: string } | { name: string }[] | null }).clients
+        const name = Array.isArray(clients) ? clients[0]?.name ?? '—' : clients?.name ?? '—'
+        const mrr = monthlyEquivalent(row.amount ?? 0, row.billing_cycle ?? null)
+        if (!byClient[clientId]) byClient[clientId] = { name, mrr: 0 }
+        byClient[clientId].name = name
+        byClient[clientId].mrr += mrr
+      }
+      return Object.entries(byClient)
+        .map(([client_id, { name, mrr }]) => ({ client_id, client_name: name, mrr }))
+        .filter((r) => r.mrr > 0)
+        .sort((a, b) => b.mrr - a.mrr)
+        .slice(0, limit)
     },
   })
 }
