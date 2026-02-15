@@ -1,0 +1,17 @@
+# Netlify build configuration for ezyy-inventory web-app
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  base = "web-app"
+  command = "npm run build"
+  publish = "dist"
+
+# SPA: serve index.html for all routes so React Router can handle them
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Optional: lock Node version (Netlify default is 18)
+# [build.environment]
+#   NODE_VERSION = "20"
