@@ -162,24 +162,26 @@ export function PlansPage() {
           {mutationError.message}
         </div>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-black">Subscription plans</h2>
-        <div className="flex items-center gap-3">
-          <input
-            type="search"
-            placeholder="Search…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm text-black placeholder:text-black/40"
-          />
-          {!isViewer && (
-            <button
-              onClick={handleOpenCreate}
-              className="rounded-full bg-black px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-white transition duration-200 hover:bg-black/90 active:scale-[0.98]"
-            >
-              Add plan
-            </button>
-          )}
+      <div className="sticky top-16 z-20 rounded-t-3xl border border-black/10 border-b bg-white p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-black">Subscription plans</h2>
+          <div className="flex items-center gap-3">
+            <input
+              type="search"
+              placeholder="Search…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm text-black placeholder:text-black/40"
+            />
+            {!isViewer && (
+              <button
+                onClick={handleOpenCreate}
+                className="rounded-full bg-black px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-white transition duration-200 hover:bg-black/90 active:scale-[0.98]"
+              >
+                Add plan
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

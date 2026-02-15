@@ -186,7 +186,9 @@ export function ImportsPage() {
         </div>
 
         <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
-          <h3 className="text-lg font-semibold text-black">Import history</h3>
+          <div className="sticky top-16 z-20 -m-6 mb-4 rounded-t-3xl border-b border-black/10 bg-white p-6">
+            <h3 className="text-lg font-semibold text-black">Import history</h3>
+          </div>
           {jobsLoading ? (
             <p className="mt-4 text-sm text-black/60">Loading…</p>
           ) : importJobs.length === 0 ? (

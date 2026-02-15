@@ -33,7 +33,9 @@ export function ActivityPage() {
   return (
     <div className="space-y-6">
       <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
-        <h2 className="text-lg font-semibold text-black">Recent activity</h2>
+        <div className="sticky top-16 z-20 -m-6 mb-4 rounded-t-3xl border-b border-black/10 bg-white p-6">
+          <h2 className="text-lg font-semibold text-black">Recent activity</h2>
+        </div>
         {isLoading ? (
           <div className="mt-4 space-y-2">
             {[1, 2, 3, 4, 5].map((i) => (

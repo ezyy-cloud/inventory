@@ -38,14 +38,25 @@ export function DeviceGroupsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          to="/devices"
-          className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black"
-        >
-          <ChevronRight className="h-4 w-4 rotate-180" /> Inventory
-        </Link>
-        <h2 className="text-xl font-semibold text-black">Device groups</h2>
+      <div className="sticky top-16 z-20 -mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-black/10 bg-white pb-4">
+        <div className="flex items-center gap-4">
+          <Link
+            to="/devices"
+            className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black"
+          >
+            <ChevronRight className="h-4 w-4 rotate-180" /> Inventory
+          </Link>
+          <h2 className="text-xl font-semibold text-black">Device groups</h2>
+        </div>
+        {!isViewer && (
+          <button
+            type="button"
+            onClick={() => setShowModal(true)}
+            className="rounded-full bg-black px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-white transition duration-200 hover:bg-black/90 active:scale-[0.98]"
+          >
+            New group
+          </button>
+        )}
       </div>
 
       {isError && (
@@ -57,18 +68,6 @@ export function DeviceGroupsPage() {
       {(createGroup.isError ?? deleteGroup.isError) && (
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
           {(createGroup.error ?? deleteGroup.error)?.message ?? 'Action failed.'}
-        </div>
-      )}
-
-      {!isViewer && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setShowModal(true)}
-            className="rounded-full bg-black px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-white transition duration-200 hover:bg-black/90 active:scale-[0.98]"
-          >
-            New group
-          </button>
         </div>
       )}
 

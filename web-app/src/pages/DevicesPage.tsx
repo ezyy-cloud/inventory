@@ -19,7 +19,7 @@ import { QueryErrorBanner } from '../components/QueryErrorBanner'
 import { StatusPill } from '../components/StatusPill'
 import { ClientSelector } from '../components/ClientSelector'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { useDevices, useDeviceIdsForFilters, useBulkUpdateDeviceStatus, useUpdateDevice } from '../hooks/useDevices'
+import { useDevices, useBulkUpdateDeviceStatus, useUpdateDevice } from '../hooks/useDevices'
 import { useAssignDevice, useBulkUnassignDevices } from '../hooks/useAssignments'
 import { useDeviceGroups, useAddDevicesToGroup, useRemoveDevicesFromGroup } from '../hooks/useDeviceGroups'
 import { useSubscriptionPlans } from '../hooks/useSubscriptionPlans'
@@ -179,8 +179,6 @@ function getColumns(type: DeviceType): { key: string; label: string }[] {
     case 'car_tracker':
       return [
         { key: 'name', label: 'Name' },
-        { key: 'brand', label: 'Brand' },
-        { key: 'model', label: 'Model' },
         { key: 'sim', label: 'SIM' },
         { key: 'imei', label: 'IMEI' },
         { key: 'reg', label: 'Reg Number' },
@@ -295,23 +293,6 @@ export function DevicesPage() {
   })
 
   const { rows: devices, totalCount } = data ?? { rows: [], totalCount: 0 }
-  const [selectAllRequested, setSelectAllRequested] = useState(false)
-  const { data: allMatchingIds, isLoading: selectAllLoading } = useDeviceIdsForFilters(
-    {
-      type: activeTab,
-      status: statusFilter,
-      search: debouncedSearch.trim() || undefined,
-      sortBy,
-      sortOrder,
-    },
-    { enabled: selectAllRequested },
-  )
-  useEffect(() => {
-    if (selectAllRequested && allMatchingIds != null) {
-      setSelectedIds(new Set(allMatchingIds))
-      setSelectAllRequested(false)
-    }
-  }, [selectAllRequested, allMatchingIds])
   const columns = getColumns(activeTab)
   const rows = devices.map((d) => formatDeviceRow(d, activeTab))
 
@@ -443,7 +424,7 @@ export function DevicesPage() {
       </section>
 
       <section className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
-        <div className="sticky top-0 z-10 -m-6 mb-4 rounded-t-3xl border-b border-black/10 bg-white p-6">
+        <div className="sticky top-16 z-20 -m-6 mb-4 rounded-t-3xl border-b border-black/10 bg-white p-6">
         {selectedIds.size > 0 && !isViewer && (
           <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-black/10 bg-black/5 px-4 py-3">
             <span className="text-sm font-semibold text-black">{selectedIds.size} selected</span>
@@ -572,7 +553,7 @@ export function DevicesPage() {
                 <thead className="sticky top-0 z-[1] bg-white">
                   <tr className="text-xs font-semibold tracking-wide text-black/50">
                     {!isViewer && (
-                      <th className="w-10 px-2 py-2 font-semibold">
+                      <th className="w-10 px-2 py-2 font-semibold align-middle">
                         <input
                           type="checkbox"
                           aria-label="Select all on page"
@@ -580,19 +561,6 @@ export function DevicesPage() {
                           onChange={toggleSelectAll}
                           className="h-4 w-4 rounded border-black/20"
                         />
-                        {totalCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (totalCount > 2000 && !window.confirm(`Select all ${Math.min(2000, totalCount)} matching devices? (Maximum 2000.)`)) return
-                              setSelectAllRequested(true)
-                            }}
-                            disabled={selectAllLoading}
-                            className="mt-1 block text-xs font-medium text-black/60 hover:text-black disabled:opacity-50"
-                          >
-                            {selectAllLoading ? 'Loading…' : `Select all matching (max 2000)`}
-                          </button>
-                        )}
                       </th>
                     )}
                     {columns.map((col) => (

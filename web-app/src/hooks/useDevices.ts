@@ -16,6 +16,22 @@ const deviceTypeTable: Record<DeviceType, string> = {
   other: 'other',
 }
 
+/** Text columns on devices table used for search (any field). */
+const DEVICE_SEARCH_COLUMNS = [
+  'name',
+  'identifier',
+  'serial_number',
+  'location',
+  'environment',
+  'notes',
+] as const
+
+function buildDeviceSearchFilter(searchTrim: string): string {
+  const sanitized = searchTrim.replace(/,/g, ' ')
+  const pattern = `%${sanitized}%`
+  return DEVICE_SEARCH_COLUMNS.map((col) => `${col}.ilike.${pattern}`).join(',')
+}
+
 export type DevicesListParams = {
   type: DeviceType
   status?: DeviceStatus
@@ -41,7 +57,84 @@ export function useDevices(params: DevicesListParams) {
     queryKey: ['devices', type, status, page, pageSize, search ?? '', sortBy, sortOrder],
     queryFn: async () => {
       const from = (page - 1) * pageSize
-      const to = from + pageSize - 1
+      const searchTrim = search?.trim()
+      const productTable = deviceTypeTable[type]
+
+      const selectDeviceRows = (
+        devices: Record<string, unknown>[],
+        byDevice: Record<string, unknown>,
+      ): DeviceWithDetails[] =>
+        devices.map((d) => {
+          const assignments = (d as { device_assignments?: { unassigned_at: string | null }[] })
+            .device_assignments
+          const activeAssignment = Array.isArray(assignments)
+            ? assignments.find((a) => !a.unassigned_at) ?? null
+            : null
+          return {
+            ...d,
+            car_tracker: productTable === 'car_trackers' ? (byDevice[d.id as string] ?? null) : null,
+            ip_camera: productTable === 'ip_cameras' ? (byDevice[d.id as string] ?? null) : null,
+            starlink: productTable === 'starlinks' ? (byDevice[d.id as string] ?? null) : null,
+            wifi_access_point:
+              productTable === 'wifi_access_points' ? (byDevice[d.id as string] ?? null) : null,
+            tv: productTable === 'tvs' ? (byDevice[d.id as string] ?? null) : null,
+            drone: productTable === 'drones' ? (byDevice[d.id as string] ?? null) : null,
+            printer: productTable === 'printers' ? (byDevice[d.id as string] ?? null) : null,
+            websuite: productTable === 'websuites' ? (byDevice[d.id as string] ?? null) : null,
+            isp_link: productTable === 'isp_links' ? (byDevice[d.id as string] ?? null) : null,
+            assignment: activeAssignment,
+          } as DeviceWithDetails
+        })
+
+      if (searchTrim) {
+        const { data: searchResult, error: searchError } = await supabase.rpc('get_devices_search', {
+          p_device_type: type,
+          p_search: searchTrim,
+          p_status: status ?? null,
+          p_sort_by: sortBy,
+          p_sort_order: sortOrder,
+          p_limit: pageSize,
+          p_offset: from,
+        })
+        if (searchError) throw searchError
+        const rowsWithCount = (searchResult ?? []) as { id: string; total_count: number }[]
+        const ids = rowsWithCount.map((r) => r.id)
+        const totalCount = rowsWithCount[0]?.total_count ?? 0
+        if (ids.length === 0) {
+          return { rows: [], totalCount: Number(totalCount) }
+        }
+
+        const { data: devices, error: devicesError } = await supabase
+          .from('devices')
+          .select(
+            `
+            *,
+            device_assignments!left(id, client_id, assigned_at, unassigned_at, status, clients(id, name))
+          `,
+          )
+          .in('id', ids)
+        if (devicesError) throw devicesError
+
+        if (!productTable || productTable === 'other') {
+          const orderMap = new Map(ids.map((id, i) => [id, i]))
+          const rows = selectDeviceRows((devices ?? []) as Record<string, unknown>[], {})
+          rows.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0))
+          return { rows, totalCount: Number(totalCount) }
+        }
+
+        const { data: productData } = await supabase
+          .from(productTable)
+          .select('*')
+          .in('device_id', ids)
+        const byDevice = (productData ?? []).reduce(
+          (acc, p) => ({ ...acc, [p.device_id]: p }),
+          {} as Record<string, unknown>,
+        )
+        const orderMap = new Map(ids.map((id, i) => [id, i]))
+        const rows = selectDeviceRows((devices ?? []) as Record<string, unknown>[], byDevice)
+        rows.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0))
+        return { rows, totalCount: Number(totalCount) }
+      }
 
       let query = supabase
         .from('devices')
@@ -50,26 +143,23 @@ export function useDevices(params: DevicesListParams) {
           *,
           device_assignments!left(id, client_id, assigned_at, unassigned_at, status, clients(id, name))
         `,
-        { count: 'exact' }
+          { count: 'exact' }
         )
         .eq('device_type', type)
         .order(sortBy, { ascending: sortOrder === 'asc', nullsFirst: false })
-        .range(from, to)
+        .range(from, from + pageSize - 1)
 
       if (status) {
         query = query.eq('status', status)
       }
 
-      const searchTrim = search?.trim()
       if (searchTrim) {
-        const pattern = `%${searchTrim}%`
-        query = query.or(`name.ilike.${pattern},identifier.ilike.${pattern}`)
+        query = query.or(buildDeviceSearchFilter(searchTrim))
       }
 
       const { data: devices, error, count } = await query
       if (error) throw error
 
-      const productTable = deviceTypeTable[type]
       if (!productTable || productTable === 'other') {
         return { rows: (devices ?? []) as DeviceWithDetails[], totalCount: count ?? 0 }
       }
@@ -85,27 +175,7 @@ export function useDevices(params: DevicesListParams) {
         {} as Record<string, unknown>,
       )
 
-      const rows = (devices ?? []).map((d) => {
-        const assignments = (d as { device_assignments?: { unassigned_at: string | null }[] })
-          .device_assignments
-        const activeAssignment = Array.isArray(assignments)
-          ? assignments.find((a) => !a.unassigned_at) ?? null
-          : null
-        return {
-          ...d,
-          car_tracker: productTable === 'car_trackers' ? (byDevice[d.id] ?? null) : null,
-          ip_camera: productTable === 'ip_cameras' ? (byDevice[d.id] ?? null) : null,
-          starlink: productTable === 'starlinks' ? (byDevice[d.id] ?? null) : null,
-          wifi_access_point: productTable === 'wifi_access_points' ? (byDevice[d.id] ?? null) : null,
-          tv: productTable === 'tvs' ? (byDevice[d.id] ?? null) : null,
-          drone: productTable === 'drones' ? (byDevice[d.id] ?? null) : null,
-          printer: productTable === 'printers' ? (byDevice[d.id] ?? null) : null,
-          websuite: productTable === 'websuites' ? (byDevice[d.id] ?? null) : null,
-          isp_link: productTable === 'isp_links' ? (byDevice[d.id] ?? null) : null,
-          assignment: activeAssignment,
-        } as DeviceWithDetails
-      })
-
+      const rows = selectDeviceRows((devices ?? []) as Record<string, unknown>[], byDevice)
       return { rows, totalCount: count ?? 0 }
     },
   })
@@ -113,7 +183,7 @@ export function useDevices(params: DevicesListParams) {
 
 const SELECT_ALL_DEVICES_LIMIT = 2000
 
-/** Fetch device IDs matching the same filters as the list (for "Select all matching"). Capped at SELECT_ALL_DEVICES_LIMIT. */
+/** Fetch device IDs matching the same filters as the list (for "Select all"). Capped at SELECT_ALL_DEVICES_LIMIT (2000). */
 export function useDeviceIdsForFilters(
   params: DevicesListParams,
   options?: { limit?: number; enabled?: boolean },
@@ -131,6 +201,21 @@ export function useDeviceIdsForFilters(
   return useQuery({
     queryKey: ['device-ids-for-filters', type, status, search ?? '', sortBy, sortOrder, limit],
     queryFn: async () => {
+      const searchTrim = search?.trim()
+      if (searchTrim) {
+        const { data: searchResult, error: searchError } = await supabase.rpc('get_devices_search', {
+          p_device_type: type,
+          p_search: searchTrim,
+          p_status: status ?? null,
+          p_sort_by: sortBy,
+          p_sort_order: sortOrder,
+          p_limit: limit,
+          p_offset: 0,
+        })
+        if (searchError) throw searchError
+        return ((searchResult ?? []) as { id: string }[]).map((r) => r.id)
+      }
+
       let query = supabase
         .from('devices')
         .select('id')
@@ -140,11 +225,6 @@ export function useDeviceIdsForFilters(
 
       if (status) {
         query = query.eq('status', status)
-      }
-      const searchTrim = search?.trim()
-      if (searchTrim) {
-        const pattern = `%${searchTrim}%`
-        query = query.or(`name.ilike.${pattern},identifier.ilike.${pattern}`)
       }
 
       const { data, error } = await query

@@ -17,7 +17,7 @@ import {
 import { useProviderPlans } from '../hooks/useProviderPlans'
 import { useRole } from '../context/RoleContext'
 import { supabase } from '../lib/supabaseClient'
-import type { DeviceType } from '../types'
+import type { DeviceType, DeviceWithDetails } from '../types'
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
@@ -26,6 +26,121 @@ function InfoCard({ label, value }: { label: string; value: string }) {
       <p className="mt-2 text-sm font-semibold text-black">{value}</p>
     </div>
   )
+}
+
+function formatAttr(v: string | number | boolean | null | undefined): string {
+  if (v == null) return '—'
+  if (typeof v === 'boolean') return v ? 'Yes' : 'No'
+  if (typeof v === 'number') return String(v)
+  return String(v)
+}
+
+/** All device attributes (base + type-specific) for the detail view. */
+function getDeviceAttributeRows(device: DeviceWithDetails): { label: string; value: string }[] {
+  const base: { label: string; value: string }[] = [
+    { label: 'Serial number', value: formatAttr(device.serial_number) },
+    { label: 'Identifier', value: formatAttr(device.identifier) },
+    { label: 'Location', value: formatAttr(device.location) },
+    { label: 'Environment', value: formatAttr(device.environment) },
+    {
+      label: 'Coordinates',
+      value:
+        device.latitude != null && device.longitude != null
+          ? `${device.latitude}, ${device.longitude}`
+          : '—',
+    },
+  ]
+  const t = device.car_tracker
+  if (t) {
+    return [
+      ...base,
+      { label: 'Brand', value: formatAttr(t.brand) },
+      { label: 'Model', value: formatAttr(t.model) },
+      { label: 'Reg number', value: formatAttr(t.reg_number) },
+      { label: 'SIM number', value: formatAttr(t.sim_number) },
+      { label: 'User tel', value: formatAttr(t.user_tel) },
+      { label: 'Vehicle model', value: formatAttr(t.vehicle_model) },
+      { label: 'Color', value: formatAttr(t.color) },
+      { label: 'IMEI', value: formatAttr(t.imei) },
+      { label: 'Server', value: formatAttr(t.server) },
+      { label: 'Port', value: formatAttr(t.port) },
+      { label: 'Email', value: formatAttr(t.email) },
+      { label: 'Install date', value: formatAttr(t.install_date) },
+      { label: 'Last top up', value: formatAttr(t.last_top_up) },
+      { label: 'SMS notification', value: formatAttr(t.sms_notification) },
+      { label: 'Remote cut off', value: formatAttr(t.remote_cut_off) },
+    ]
+  }
+  const ic = device.ip_camera
+  if (ic) {
+    return [...base, { label: 'Camera type', value: formatAttr(ic.camera_type) }, { label: 'Range', value: formatAttr(ic.range) }]
+  }
+  const sl = device.starlink
+  if (sl) {
+    return [
+      ...base,
+      { label: 'Account', value: formatAttr(sl.account) },
+      { label: 'Subscription', value: formatAttr(sl.subscription) },
+      { label: 'Amount', value: sl.amount != null ? `USD ${sl.amount}` : '—' },
+      { label: 'Currency', value: formatAttr(sl.currency) },
+      { label: 'Renewal date', value: formatAttr(sl.renewal_date) },
+      { label: 'Registration date', value: formatAttr(sl.registration_date) },
+      { label: 'Service period', value: formatAttr(sl.service_period) },
+    ]
+  }
+  const wap = device.wifi_access_point
+  if (wap) {
+    return [
+      ...base,
+      { label: 'AP type', value: formatAttr(wap.ap_type) },
+      { label: 'Range', value: formatAttr(wap.range) },
+      { label: 'Console', value: formatAttr(wap.console) },
+    ]
+  }
+  const tv = device.tv
+  if (tv) {
+    return [
+      ...base,
+      { label: 'TV type', value: formatAttr(tv.tv_type) },
+      { label: 'Speakers', value: formatAttr(tv.speakers) },
+    ]
+  }
+  const dr = device.drone
+  if (dr) {
+    return [
+      ...base,
+      { label: 'Drone type', value: formatAttr(dr.drone_type) },
+      { label: 'Range', value: formatAttr(dr.range) },
+    ]
+  }
+  const pr = device.printer
+  if (pr) {
+    return [
+      ...base,
+      { label: 'Username', value: formatAttr(pr.username) },
+      { label: 'IP address', value: formatAttr(pr.ip_address) },
+    ]
+  }
+  const ws = device.websuite
+  if (ws) {
+    return [
+      ...base,
+      { label: 'Package', value: formatAttr(ws.package) },
+      { label: 'Domain', value: formatAttr(ws.domain) },
+    ]
+  }
+  const isp = device.isp_link
+  if (isp) {
+    return [
+      ...base,
+      { label: 'Link type', value: formatAttr(isp.link_type) },
+      { label: 'Line number', value: formatAttr(isp.line_number) },
+      { label: 'IP address', value: formatAttr(isp.ip_address) },
+      { label: 'Provider', value: formatAttr(isp.provider) },
+      { label: 'Modem user', value: formatAttr(isp.modem_user) },
+    ]
+  }
+  return base
 }
 
 export function DeviceDetailPage() {
@@ -197,6 +312,15 @@ export function DeviceDetailPage() {
                   : '—'
               }
             />
+          </div>
+
+          <div className="mt-8">
+            <p className="text-sm font-semibold text-black">Device attributes</p>
+            <div className="mt-4 space-y-4">
+              {getDeviceAttributeRows(device).map(({ label, value }) => (
+                <InfoCard key={label} label={label} value={value} />
+              ))}
+            </div>
           </div>
 
           <div className="mt-8">

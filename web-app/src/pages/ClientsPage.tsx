@@ -7,12 +7,10 @@ import { Modal } from '../components/Modal'
 import { useRole } from '../context/RoleContext'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { useClientsList } from '../hooks/useClients'
-import { useOutstandingInvoices } from '../hooks/useInvoices'
 import { useClientTags, useCreateClientTag } from '../hooks/useClientTags'
 import { useSavedViews, useSaveView } from '../hooks/useSavedViews'
 
 const DEFAULT_PAGE_SIZE = 25
-const OUTSTANDING_PAGE_SIZE = 10
 
 function parseClientListParams(searchParams: URLSearchParams) {
   const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1)
@@ -76,17 +74,9 @@ export function ClientsPage() {
     sortOrder,
     tagIds: urlTagIds.length > 0 ? urlTagIds : undefined,
   })
-  const [outstandingPage, setOutstandingPage] = useState(1)
-  const [outstandingSearch, setOutstandingSearch] = useState('')
-  const { data: outstandingData, isError: outstandingError, error: outstandingErrorObj, refetch: refetchOutstanding } = useOutstandingInvoices({
-    page: outstandingPage,
-    pageSize: OUTSTANDING_PAGE_SIZE,
-    search: outstandingSearch.trim() || undefined,
-  })
 
   const { isViewer } = useRole()
   const { rows: clients, totalCount } = clientsData ?? { rows: [], totalCount: 0 }
-  const { rows: outstandingInvoices = [], totalCount: outstandingTotal } = outstandingData ?? { rows: [], totalCount: 0 }
 
   useEffect(() => {
     setSearchParams((prev) => {
@@ -96,30 +86,16 @@ export function ClientsPage() {
     })
   }, [searchQuery, setSearchParams])
 
-  useEffect(() => {
-    setOutstandingPage(1)
-  }, [outstandingSearch])
-
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-      {(isError ?? outstandingError) && (
-        <div className="col-span-full space-y-3">
-          {isError && (
-            <QueryErrorBanner
-              message={error?.message ?? 'Failed to load clients.'}
-              onRetry={() => void refetch()}
-            />
-          )}
-          {outstandingError && (
-            <QueryErrorBanner
-              message={outstandingErrorObj?.message ?? 'Failed to load outstanding invoices.'}
-              onRetry={() => void refetchOutstanding()}
-            />
-          )}
-        </div>
+    <div className="space-y-6">
+      {isError && (
+        <QueryErrorBanner
+          message={error?.message ?? 'Failed to load clients.'}
+          onRetry={() => void refetch()}
+        />
       )}
       <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
-        <div className="sticky top-0 z-10 -m-6 rounded-t-3xl border-b border-black/10 bg-white p-6">
+        <div className="sticky top-16 z-20 -m-6 mb-4 rounded-t-3xl border-b border-black/10 bg-white p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-black">Clients</h2>
           <div className="flex items-center gap-3">
@@ -314,55 +290,6 @@ export function ClientsPage() {
               />
             </>
           )}
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
-          <h3 className="text-lg font-semibold text-black">Outstanding</h3>
-          <input
-            type="search"
-            aria-label="Search outstanding invoices"
-            placeholder="Search…"
-            value={outstandingSearch}
-            onChange={(e) => setOutstandingSearch(e.target.value)}
-            className="mt-3 w-full rounded-full border border-black/10 bg-white px-4 py-2 text-sm text-black placeholder:text-black/40"
-          />
-          <div className="mt-4 space-y-3">
-            {outstandingInvoices.length === 0 ? (
-              <p className="text-sm text-black/60">No outstanding invoices.</p>
-            ) : (
-              <>
-                {outstandingInvoices.map((inv) => (
-                  <Link
-                    key={inv.id}
-                    to={`/invoices/${inv.id}`}
-                    className="block rounded-2xl border border-black/10 bg-black/5 px-4 py-3 transition hover:bg-black/10"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-black">{inv.invoice_number}</p>
-                        <p className="text-xs text-black/60">
-                          {(inv as { clients?: { name: string } }).clients?.name ?? '—'}
-                        </p>
-                      </div>
-                      <StatusPill value={inv.status} />
-                    </div>
-                    <div className="mt-2 flex items-center justify-between text-xs text-black/60">
-                      <span>Due {inv.due_at ?? '—'}</span>
-                      <span>USD {inv.amount?.toLocaleString() ?? '—'}</span>
-                    </div>
-                  </Link>
-                ))}
-                <Pagination
-                  page={outstandingPage}
-                  pageSize={OUTSTANDING_PAGE_SIZE}
-                  totalCount={outstandingTotal}
-                  onPageChange={setOutstandingPage}
-                />
-              </>
-            )}
-          </div>
         </div>
       </div>
 

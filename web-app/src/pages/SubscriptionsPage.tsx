@@ -160,7 +160,7 @@ export function SubscriptionsPage() {
         </div>
       )}
       <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
-        <div className="sticky top-0 z-10 -m-6 rounded-t-3xl border-b border-black/10 bg-white p-6">
+        <div className="sticky top-16 z-20 -m-6 mb-4 rounded-t-3xl border-b border-black/10 bg-white p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-lg font-semibold text-black">Subscriptions</h2>

@@ -132,41 +132,43 @@ export function ProviderPaymentsPage() {
         </div>
       )}
       <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-black">Provider payments</h2>
-          <div className="flex items-center gap-3">
-            <input
-              type="search"
-              placeholder="Search…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm text-black placeholder:text-black/40"
-            />
-            {!isViewer && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowSuggestModal(true)}
-                  disabled={suggestPayments.isPending}
-                  className="rounded-full border border-black/20 bg-white px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-black transition duration-200 hover:bg-black/5 active:scale-[0.98] disabled:opacity-50"
-                >
-                  Suggest payments
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowLogBillingModal(true)}
-                  className="rounded-full border border-black/20 bg-white px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-black transition duration-200 hover:bg-black/5 active:scale-[0.98]"
-                >
-                  Log billing record
-                </button>
-                <button
-                  onClick={() => setShowPayModal(true)}
-                  className="rounded-full bg-black px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-white transition duration-200 hover:bg-black/90 active:scale-[0.98]"
-                >
-                  Add payment
-                </button>
-              </>
-            )}
+        <div className="sticky top-16 z-20 -m-6 mb-4 rounded-t-3xl border-b border-black/10 bg-white p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-black">Provider payments</h2>
+            <div className="flex items-center gap-3">
+              <input
+                type="search"
+                placeholder="Search…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm text-black placeholder:text-black/40"
+              />
+              {!isViewer && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowSuggestModal(true)}
+                    disabled={suggestPayments.isPending}
+                    className="rounded-full border border-black/20 bg-white px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-black transition duration-200 hover:bg-black/5 active:scale-[0.98] disabled:opacity-50"
+                  >
+                    Suggest payments
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowLogBillingModal(true)}
+                    className="rounded-full border border-black/20 bg-white px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-black transition duration-200 hover:bg-black/5 active:scale-[0.98]"
+                  >
+                    Log billing record
+                  </button>
+                  <button
+                    onClick={() => setShowPayModal(true)}
+                    className="rounded-full bg-black px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-white transition duration-200 hover:bg-black/90 active:scale-[0.98]"
+                  >
+                    Add payment
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <div className="mt-6 space-y-4">
