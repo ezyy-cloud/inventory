@@ -163,7 +163,7 @@ export function DeviceDetailPage() {
     return (
       <div className="space-y-6">
         <Link
-          to="/devices"
+          to="/devices/type/car_tracker"
           className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black"
         >
           <ChevronRight className="h-4 w-4 rotate-180" /> Back to inventory
@@ -180,7 +180,7 @@ export function DeviceDetailPage() {
     return (
       <div className="space-y-6">
         <Link
-          to="/devices"
+          to="/devices/type/car_tracker"
           className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black"
         >
           <ChevronRight className="h-4 w-4 rotate-180" /> Back to inventory
@@ -267,7 +267,7 @@ export function DeviceDetailPage() {
       )}
       <div className="flex items-center justify-between">
         <Link
-          to="/devices"
+          to="/devices/type/car_tracker"
           className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black"
         >
           <ChevronRight className="h-4 w-4 rotate-180" /> Back to inventory

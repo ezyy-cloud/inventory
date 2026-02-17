@@ -139,7 +139,7 @@ export function DashboardPage() {
             </Link>
             {' · '}
             <Link
-              to="/devices?status=maintenance"
+              to="/devices/type/car_tracker?status=maintenance"
               className="font-semibold text-black underline transition hover:opacity-80"
             >
               {maintenanceDevices?.length ?? 0} device(s) in maintenance &gt;7 days
@@ -152,7 +152,7 @@ export function DashboardPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-black">Devices by status</h2>
           <Link
-            to="/devices"
+            to="/devices/type/car_tracker"
             className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:opacity-80"
           >
             View Inventory <ChevronRight className="h-4 w-4" />
@@ -191,7 +191,7 @@ export function DashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-black">Devices by category</h2>
             <Link
-              to="/devices"
+              to="/devices/type/car_tracker"
               className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:opacity-80"
             >
               View Inventory <ChevronRight className="h-4 w-4" />
@@ -461,7 +461,7 @@ export function DashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-black">Device coverage</h2>
             <Link
-              to="/devices"
+              to="/devices/type/car_tracker"
               className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:opacity-80"
             >
               View Inventory <ChevronRight className="h-4 w-4" />

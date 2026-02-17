@@ -6,6 +6,7 @@ const PATH_LABELS: Record<string, string> = {
   search: 'Search',
   devices: 'Inventory',
   clients: 'Clients',
+  mail: 'Mail',
   subscriptions: 'Subscriptions',
   plans: 'Plans',
   invoices: 'Invoices',
@@ -14,6 +15,17 @@ const PATH_LABELS: Record<string, string> = {
   imports: 'Imports',
   reports: 'Reports',
   settings: 'Settings',
+  groups: 'Groups',
+  car_tracker: 'Car Trackers',
+  ip_camera: 'IP Cameras',
+  starlink: 'Starlinks',
+  wifi_access_point: 'WiFi Access Points',
+  tv: 'TVs',
+  drone: 'Drones',
+  printer: 'Printers',
+  websuite: 'Websuites',
+  isp_link: 'ISP Links',
+  other: 'Other',
 }
 
 export function Breadcrumbs() {
@@ -32,8 +44,14 @@ export function Breadcrumbs() {
   const crumbs: { path: string; label: string }[] = []
   let acc = ''
   for (let i = 0; i < segments.length; i++) {
-    acc += (acc ? '/' : '') + segments[i]
     const segment = segments[i]
+    if (segment === 'type' && segments[i + 1] && PATH_LABELS[segments[i + 1]]) {
+      acc += (acc ? '/' : '') + segment + '/' + segments[i + 1]
+      crumbs.push({ path: acc, label: PATH_LABELS[segments[i + 1]] ?? segments[i + 1].replace(/_/g, ' ') })
+      i++
+      continue
+    }
+    acc += (acc ? '/' : '') + segment
     const label =
       PATH_LABELS[segment] ??
       (segment === 'new' && segments[i - 1] ? `New ${PATH_LABELS[segments[i - 1]] ?? segment}` : null) ??

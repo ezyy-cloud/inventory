@@ -14,7 +14,7 @@ export function DeviceEditPage() {
     return (
       <div className="space-y-6">
         <button
-          onClick={() => navigate('/devices')}
+          onClick={() => navigate('/devices/type/car_tracker')}
           className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black"
         >
           <ChevronRight className="h-4 w-4 rotate-180" /> Back
@@ -31,7 +31,7 @@ export function DeviceEditPage() {
     return (
       <div className="space-y-6">
         <button
-          onClick={() => navigate('/devices')}
+          onClick={() => navigate('/devices/type/car_tracker')}
           className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black"
         >
           <ChevronRight className="h-4 w-4 rotate-180" /> Back

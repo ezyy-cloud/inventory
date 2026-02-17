@@ -144,16 +144,46 @@ export function useUpdateClient() {
   })
 }
 
+/** Unassign all devices for a client (complete assignments, cancel subscriptions, set devices in_stock). */
+async function unassignAllDevicesForClient(clientId: string): Promise<void> {
+  const { data: assignments, error: fetchErr } = await supabase
+    .from('device_assignments')
+    .select('id, device_id')
+    .eq('client_id', clientId)
+    .is('unassigned_at', null)
+  if (fetchErr) throw fetchErr
+  const now = new Date().toISOString()
+  const today = now.slice(0, 10)
+  for (const a of assignments ?? []) {
+    await supabase
+      .from('device_assignments')
+      .update({ unassigned_at: now, status: 'completed' })
+      .eq('id', a.id)
+    await supabase
+      .from('subscriptions')
+      .update({ status: 'canceled', end_date: today })
+      .eq('device_id', a.device_id)
+      .eq('status', 'active')
+    await supabase.from('devices').update({ status: 'in_stock' }).eq('id', a.device_id)
+  }
+}
+
 export function useDeleteClient() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
+      await unassignAllDevicesForClient(id)
       const { error } = await supabase.from('clients').delete().eq('id', id)
       if (error) throw error
       return id
     },
-    onSuccess: () => {
+    onSuccess: (deletedId) => {
+      if (deletedId) void recordAudit('client.deleted', 'clients', deletedId)
       void queryClient.invalidateQueries({ queryKey: ['clients'] })
+      void queryClient.invalidateQueries({ queryKey: ['clients-list'] })
+      void queryClient.invalidateQueries({ queryKey: ['subscriptions'] })
+      void queryClient.invalidateQueries({ queryKey: ['devices'] })
+      void queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
     },
   })
 }

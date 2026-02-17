@@ -27,7 +27,7 @@ export function DeviceFormPage() {
     return (
       <div className="space-y-6">
         <button
-          onClick={() => navigate('/devices')}
+          onClick={() => navigate('/devices/type/car_tracker')}
           className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black"
         >
           <ChevronRight className="h-4 w-4 rotate-180" /> Back
@@ -40,7 +40,7 @@ export function DeviceFormPage() {
   const handleSubmit = async (data: Record<string, unknown>) => {
     try {
       await createDevice.mutateAsync(data as Parameters<typeof createDevice.mutateAsync>[0])
-      navigate('/devices')
+      navigate('/devices/type/car_tracker')
     } catch (e) {
       console.error(e)
     }
@@ -57,7 +57,7 @@ export function DeviceFormPage() {
       )}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate('/devices')}
+          onClick={() => navigate('/devices/type/car_tracker')}
           className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black"
         >
           <ChevronRight className="h-4 w-4 rotate-180" /> Back
@@ -68,7 +68,7 @@ export function DeviceFormPage() {
       <DeviceForm
         type={deviceType ?? 'car_tracker'}
         onSubmit={handleSubmit}
-        onCancel={() => navigate('/devices')}
+        onCancel={() => navigate('/devices/type/car_tracker')}
         isSubmitting={createDevice.isPending}
       />
     </div>

@@ -44,6 +44,15 @@ export interface Client {
   updated_at: string
 }
 
+export interface MailTemplate {
+  id: string
+  name: string
+  subject: string
+  body_html: string
+  created_at: string
+  updated_at: string
+}
+
 export interface Device {
   id: string
   device_type: DeviceType
@@ -296,6 +305,8 @@ export type AlertType =
   | 'renewal_due'
   | 'subscription_ending_soon'
   | 'device_maintenance_long'
+  | 'client_mail_sent'
+  | 'client_mail_broadcast'
 
 export type AlertSeverity = 'high' | 'medium' | 'low'
 
@@ -329,6 +340,8 @@ export const ALERT_TYPE_LABELS: Record<AlertType, string> = {
   renewal_due: 'Renewals due',
   subscription_ending_soon: 'Subscriptions ending soon',
   device_maintenance_long: 'Devices in maintenance',
+  client_mail_sent: 'Emails sent',
+  client_mail_broadcast: 'Mail broadcasts',
 }
 
 export const DEVICE_TYPE_LABELS: Record<DeviceType, string> = {

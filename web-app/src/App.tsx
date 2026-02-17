@@ -26,6 +26,7 @@ import { PlansPage } from './pages/PlansPage'
 import { ProvidersPage } from './pages/ProvidersPage'
 import { InvoicesPage } from './pages/InvoicesPage'
 import { InvoiceDetailPage } from './pages/InvoiceDetailPage'
+import { MailPage } from './pages/MailPage'
 import { ProviderPaymentsPage } from './pages/ProviderPaymentsPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { AlertsPage } from './pages/AlertsPage'
@@ -145,17 +146,19 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<DashboardPage />} />
       <Route path="/search" element={<SearchPage />} />
-      <Route path="/devices" element={<RequireRole allowedRoles={ROLES_DEVICES_READ}><DevicesPage /></RequireRole>} />
-      <Route path="/devices/new/:type" element={<RequireRole allowedRoles={ROLES_TECHNICIAN}><DeviceFormPage /></RequireRole>} />
-      <Route path="/devices/:id" element={<RequireRole allowedRoles={ROLES_DEVICES_READ}><DeviceDetailPage /></RequireRole>} />
-      <Route path="/devices/:id/edit" element={<RequireRole allowedRoles={ROLES_TECHNICIAN}><DeviceEditPage /></RequireRole>} />
+      <Route path="/devices" element={<Navigate to="/devices/type/car_tracker" replace />} />
+      <Route path="/devices/type/:type" element={<RequireRole allowedRoles={ROLES_DEVICES_READ}><DevicesPage /></RequireRole>} />
       <Route path="/devices/groups" element={<RequireRole allowedRoles={ROLES_DEVICES_READ}><DeviceGroupsPage /></RequireRole>} />
+      <Route path="/devices/new/:type" element={<RequireRole allowedRoles={ROLES_TECHNICIAN}><DeviceFormPage /></RequireRole>} />
+      <Route path="/devices/:id/edit" element={<RequireRole allowedRoles={ROLES_TECHNICIAN}><DeviceEditPage /></RequireRole>} />
+      <Route path="/devices/:id" element={<RequireRole allowedRoles={ROLES_DEVICES_READ}><DeviceDetailPage /></RequireRole>} />
       <Route path="/clients" element={<RequireRole allowedRoles={ROLES_CLIENTS_READ}><ClientsPage /></RequireRole>} />
       <Route path="/clients/new" element={<RequireRole allowedRoles={ROLES_FRONT_DESK}><ClientFormPage /></RequireRole>} />
       <Route path="/clients/:id" element={<RequireRole allowedRoles={ROLES_CLIENTS_READ}><ClientDetailPage /></RequireRole>} />
       <Route path="/clients/:id/edit" element={<RequireRole allowedRoles={ROLES_FRONT_DESK}><ClientFormPage /></RequireRole>} />
       <Route path="/subscriptions" element={<RequireRole allowedRoles={ROLES_CLIENTS_READ}><SubscriptionsPage /></RequireRole>} />
       <Route path="/plans" element={<RequireRole allowedRoles={ROLES_CLIENTS_READ}><PlansPage /></RequireRole>} />
+      <Route path="/mail" element={<RequireRole allowedRoles={ROLES_CLIENTS_READ}><MailPage /></RequireRole>} />
       <Route path="/providers" element={<RequireRole allowedRoles={ROLES_CLIENTS_READ}><ProvidersPage /></RequireRole>} />
       <Route path="/invoices" element={<RequireRole allowedRoles={ROLES_CLIENTS_READ}><InvoicesPage /></RequireRole>} />
       <Route path="/invoices/:id" element={<RequireRole allowedRoles={ROLES_CLIENTS_READ}><InvoiceDetailPage /></RequireRole>} />

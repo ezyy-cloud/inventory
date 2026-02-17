@@ -14,6 +14,8 @@ const ALERT_TYPE_LABELS: Record<AlertType, string> = {
   renewal_due: 'Renewals due (14 days)',
   subscription_ending_soon: 'Subscriptions ending in 30 days',
   device_maintenance_long: 'Devices in maintenance (> 7 days)',
+  client_mail_sent: 'Emails sent',
+  client_mail_broadcast: 'Mail broadcasts',
 }
 
 const ALERT_TYPE_LINKS: Record<AlertType, string> = {
@@ -21,7 +23,9 @@ const ALERT_TYPE_LINKS: Record<AlertType, string> = {
   overdue_subscription: '/subscriptions',
   renewal_due: '/subscriptions',
   subscription_ending_soon: '/subscriptions?end_within=30',
-  device_maintenance_long: '/devices?status=maintenance',
+  device_maintenance_long: '/devices/type/car_tracker?status=maintenance',
+  client_mail_sent: '/mail',
+  client_mail_broadcast: '/mail',
 }
 
 function AlertRow({ alert }: { alert: UnifiedAlert }) {

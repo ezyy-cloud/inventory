@@ -10,7 +10,10 @@ export type AuditAction =
   | 'invoice.paid'
   | 'invoice.void'
   | 'client.created'
+  | 'client.deleted'
   | 'profile.role_changed'
+  | 'client_mail.sent'
+  | 'client_mail.broadcast'
 
 export async function recordAudit(
   action: AuditAction,

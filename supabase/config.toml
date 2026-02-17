@@ -75,6 +75,9 @@ url = ""
 [functions.send-invoice-email]
 verify_jwt = false
 
+[functions.send-client-mail]
+verify_jwt = false
+
 # Super Admin only; validates JWT and role in function
 [functions.invite-user]
 verify_jwt = false

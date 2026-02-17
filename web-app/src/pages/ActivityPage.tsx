@@ -11,6 +11,8 @@ function entityUrl(type: string | null, id: string | null): string | null {
       return '/settings'
     case 'client_invoices':
       return `/invoices/${id}`
+    case 'clients':
+      return `/clients/${id}`
     default:
       return null
   }

@@ -1,11 +1,12 @@
 import { ChevronRight } from 'lucide-react'
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useRole } from '../context/RoleContext'
+import { ConfirmModal } from '../components/ConfirmModal'
 import { InfoCard } from '../components/InfoCard'
 import { QueryErrorBanner } from '../components/QueryErrorBanner'
 import { StatusPill } from '../components/StatusPill'
-import { useClient, useUpdateClient } from '../hooks/useClients'
+import { useClient, useUpdateClient, useDeleteClient } from '../hooks/useClients'
 import { useSubscriptionsByClient } from '../hooks/useSubscriptions'
 import { useInvoicesByClient } from '../hooks/useInvoices'
 import { useAssignDevice } from '../hooks/useAssignments'
@@ -16,15 +17,18 @@ import type { DeviceType } from '../types'
 
 export function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [showAssign, setShowAssign] = useState(false)
   const [assignDeviceId, setAssignDeviceId] = useState('')
   const [assignPlanId, setAssignPlanId] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const { data: client, isLoading, isError, error, refetch } = useClient(id ?? null)
   const { data: clientSubs = [] } = useSubscriptionsByClient(id ?? null)
   const { data: clientInvoices = [] } = useInvoicesByClient(id ?? null)
   const { isViewer } = useRole()
   const updateClient = useUpdateClient()
+  const deleteClient = useDeleteClient()
   const assignDevice = useAssignDevice()
   const { data: availableDevices } = useQuery({
     queryKey: ['devices-in-stock'],
@@ -73,7 +77,7 @@ export function ClientDetailPage() {
     )
   }
 
-  const mutationError = assignDevice.error
+  const mutationError = assignDevice.error ?? deleteClient.error
 
   return (
     <div className="space-y-6">
@@ -105,9 +109,35 @@ export function ClientDetailPage() {
             >
               Edit Client
             </Link>
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={deleteClient.isPending}
+              className="rounded-full border border-red-200 bg-white px-4 py-2 text-xs font-semibold tracking-wide text-red-600 transition duration-200 hover:bg-red-50 disabled:opacity-50"
+            >
+              Delete client
+            </button>
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Delete client"
+        body="This will remove the client from the system. Their assigned devices will be unassigned (subscriptions for those devices canceled, devices set to in stock). Invoices and subscription history are kept. This cannot be undone."
+        confirmLabel="Delete client"
+        variant="danger"
+        onConfirm={async () => {
+          try {
+            await deleteClient.mutateAsync(client.id)
+            setShowDeleteConfirm(false)
+            navigate('/clients')
+          } catch (e) {
+            console.error(e)
+          }
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
 
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">

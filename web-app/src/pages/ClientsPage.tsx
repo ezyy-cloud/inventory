@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Pagination } from '../components/Pagination'
+import { ConfirmModal } from '../components/ConfirmModal'
 import { QueryErrorBanner } from '../components/QueryErrorBanner'
 import { StatusPill } from '../components/StatusPill'
 import { Modal } from '../components/Modal'
 import { useRole } from '../context/RoleContext'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { useClientsList, useUpdateClient } from '../hooks/useClients'
+import { useClientsList, useUpdateClient, useDeleteClient } from '../hooks/useClients'
 import { useClientTags, useCreateClientTag } from '../hooks/useClientTags'
 import { useSavedViews, useSaveView } from '../hooks/useSavedViews'
 
@@ -34,6 +35,7 @@ export function ClientsPage() {
   const [showSaveViewModal, setShowSaveViewModal] = useState(false)
   const [savedViewName, setSavedViewName] = useState('')
   const [savedViewDefault, setSavedViewDefault] = useState(false)
+  const [clientToDelete, setClientToDelete] = useState<{ id: string; name: string } | null>(null)
   const debouncedSearch = useDebouncedValue(searchInput, 350)
   const { data: savedViews = [] } = useSavedViews('clients')
   const saveView = useSaveView('clients')
@@ -70,6 +72,7 @@ export function ClientsPage() {
   const { data: tags = [] } = useClientTags()
   const createTag = useCreateClientTag()
   const updateClient = useUpdateClient()
+  const deleteClient = useDeleteClient()
   const { data: clientsData, isLoading, isError, error, refetch } = useClientsList({
     page,
     pageSize,
@@ -307,11 +310,43 @@ export function ClientsPage() {
                         >
                           Edit
                         </Link>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setClientToDelete({ id: client.id, name: client.name })
+                          }}
+                          disabled={deleteClient.isPending}
+                          className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold tracking-wide text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
                       </>
                     )}
                   </div>
                 </div>
               ))}
+              <ConfirmModal
+                open={clientToDelete != null}
+                title="Delete client"
+                body={
+                  clientToDelete
+                    ? `Delete "${clientToDelete.name}"? Their assigned devices will be unassigned. Invoices and subscription history are kept. This cannot be undone.`
+                    : ''
+                }
+                confirmLabel="Delete client"
+                variant="danger"
+                onConfirm={async () => {
+                  if (!clientToDelete) return
+                  try {
+                    await deleteClient.mutateAsync(clientToDelete.id)
+                    setClientToDelete(null)
+                  } catch (e) {
+                    console.error(e)
+                  }
+                }}
+                onCancel={() => setClientToDelete(null)}
+              />
               <Pagination
                 page={page}
                 pageSize={pageSize}

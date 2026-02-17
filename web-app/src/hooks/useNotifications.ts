@@ -8,6 +8,8 @@ function notificationLink(n: Notification): string {
   if (n.entity_type === 'client_invoice' && n.entity_id) return `/invoices/${n.entity_id}`
   if (n.entity_type === 'device' && n.entity_id) return `/devices/${n.entity_id}`
   if (n.entity_type === 'subscription') return '/subscriptions'
+  if (n.entity_type === 'client' && n.entity_id) return `/clients/${n.entity_id}`
+  if (n.entity_type === 'mail_broadcast') return '/mail'
   return '/alerts'
 }
 

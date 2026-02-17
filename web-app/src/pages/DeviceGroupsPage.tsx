@@ -41,7 +41,7 @@ export function DeviceGroupsPage() {
       <div className="sticky top-16 z-20 -mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-black/10 bg-white pb-4">
         <div className="flex items-center gap-4">
           <Link
-            to="/devices"
+            to="/devices/type/car_tracker"
             className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black"
           >
             <ChevronRight className="h-4 w-4 rotate-180" /> Inventory

@@ -1,19 +1,6 @@
-import {
-  Box,
-  Camera,
-  Car,
-  ChevronRight,
-  Globe,
-  MoreVertical,
-  Monitor,
-  Plane,
-  Printer,
-  Router,
-  SatelliteDish,
-  Wifi,
-} from 'lucide-react'
+import { ChevronRight, MoreVertical } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { Pagination } from '../components/Pagination'
 import { QueryErrorBanner } from '../components/QueryErrorBanner'
 import { StatusPill } from '../components/StatusPill'
@@ -44,19 +31,6 @@ const DEVICE_TYPES: DeviceType[] = [
   'isp_link',
   'other',
 ]
-const DEVICE_TABS: { id: DeviceType; label: string; icon: typeof Car }[] = [
-  { id: 'car_tracker', label: 'Car Trackers', icon: Car },
-  { id: 'ip_camera', label: 'IP Cameras', icon: Camera },
-  { id: 'starlink', label: 'Starlinks', icon: SatelliteDish },
-  { id: 'wifi_access_point', label: 'WiFi Access Points', icon: Wifi },
-  { id: 'tv', label: 'TVs', icon: Monitor },
-  { id: 'drone', label: 'Drones', icon: Plane },
-  { id: 'printer', label: 'Printers', icon: Printer },
-  { id: 'websuite', label: 'Websuites', icon: Globe },
-  { id: 'isp_link', label: 'ISP Links', icon: Router },
-  { id: 'other', label: 'Other', icon: Box },
-]
-
 function formatDeviceRow(d: DeviceWithDetails, type: DeviceType): Record<string, string> {
   const c = (d.assignment as { clients?: { name: string } } | null)?.clients?.name ?? '—'
   const base: Record<string, string> = {
@@ -240,8 +214,6 @@ function getColumns(type: DeviceType): { key: string; label: string }[] {
 }
 
 function parseDeviceListParams(searchParams: URLSearchParams) {
-  const type = (searchParams.get('type') ?? 'car_tracker') as DeviceType
-  const validType = DEVICE_TYPES.includes(type) ? type : 'car_tracker'
   const statusParam = searchParams.get('status') ?? 'all'
   const status = statusParam === 'all' ? undefined : (statusParam as 'in_stock' | 'assigned' | 'maintenance')
   const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1)
@@ -249,12 +221,18 @@ function parseDeviceListParams(searchParams: URLSearchParams) {
   const q = searchParams.get('q') ?? ''
   const sort = (searchParams.get('sort') ?? 'name') as 'name' | 'status' | 'updated_at'
   const order = (searchParams.get('order') ?? 'desc') as 'asc' | 'desc'
-  return { type: validType, status, page, pageSize, q, sort, order }
+  return { status, page, pageSize, q, sort, order }
 }
 
 export function DevicesPage() {
+  const { type: urlType } = useParams<{ type: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { type: activeTab, status: statusFilter, page, pageSize, q: searchQuery, sort: sortBy, order: sortOrder } = parseDeviceListParams(searchParams)
+  const { status: statusFilter, page, pageSize, q: searchQuery, sort: sortBy, order: sortOrder } = parseDeviceListParams(searchParams)
+  const validType = urlType && DEVICE_TYPES.includes(urlType as DeviceType)
+  const activeTab: DeviceType = (validType ? urlType : 'car_tracker') as DeviceType
+  if (urlType !== undefined && !validType) {
+    return <Navigate to="/devices/type/car_tracker" replace />
+  }
 
   const setParams = useCallback(
     (updates: Record<string, string | number | undefined>) => {
@@ -384,10 +362,9 @@ export function DevicesPage() {
   useEffect(() => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
-      const urlType = next.get('type') ?? 'car_tracker'
       const urlStatus = next.get('status') ?? 'all'
       const urlQ = next.get('q') ?? ''
-      if (urlType !== activeTab || urlStatus !== (statusFilter ?? 'all') || urlQ !== searchQuery) {
+      if (urlStatus !== (statusFilter ?? 'all') || urlQ !== searchQuery) {
         next.set('page', '1')
       }
       return next
@@ -402,33 +379,6 @@ export function DevicesPage() {
           onRetry={() => void refetch()}
         />
       )}
-      <section className="flex flex-wrap items-center gap-3">
-        {DEVICE_TABS.map((tab) => {
-          const Icon = tab.icon
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setParams({ type: tab.id, page: 1 })}
-              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap transition ${
-                activeTab === tab.id
-                  ? 'border-black bg-black text-white'
-                  : 'border-black/10 bg-white text-black'
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          )
-        })}
-        <Link
-          to="/devices/groups"
-          className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-black transition duration-200 hover:bg-black/5 active:scale-[0.98]"
-        >
-          Groups
-        </Link>
-      </section>
-
       <section className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
         <div className="sticky top-16 z-20 -m-6 mb-4 rounded-t-3xl border-b border-black/10 bg-white p-6">
         {selectedIds.size > 0 && !isViewer && (

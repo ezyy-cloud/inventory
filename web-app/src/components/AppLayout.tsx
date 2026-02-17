@@ -8,6 +8,9 @@ import { useNotifications, useMarkAllNotificationsRead, useMarkNotificationRead 
 import { useSidebarCounts } from '../hooks/useSidebarCounts'
 import {
   Bell,
+  Box,
+  Camera,
+  Car,
   ChevronDown,
   ChevronRight,
   CreditCard,
@@ -16,16 +19,24 @@ import {
   History,
   LayoutDashboard,
   LogOut,
+  Mail,
   Menu,
+  Monitor,
   Package,
+  Plane,
+  Printer,
+  Router,
+  SatelliteDish,
   Search,
   Server,
   Settings,
   UploadCloud,
   Users,
   Wrench,
+  Wifi,
   X,
   ClipboardList,
+  Globe,
   type LucideIcon,
 } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
@@ -64,12 +75,26 @@ type NavSection = {
   filterItemsForViewer?: boolean
 }
 
+const deviceNavItems: NavItem[] = [
+  { path: '/devices/type/car_tracker', label: 'Car Trackers', icon: Car },
+  { path: '/devices/type/ip_camera', label: 'IP Cameras', icon: Camera },
+  { path: '/devices/type/starlink', label: 'Starlinks', icon: SatelliteDish },
+  { path: '/devices/type/wifi_access_point', label: 'WiFi Access Points', icon: Wifi },
+  { path: '/devices/type/tv', label: 'TVs', icon: Monitor },
+  { path: '/devices/type/drone', label: 'Drones', icon: Plane },
+  { path: '/devices/type/printer', label: 'Printers', icon: Printer },
+  { path: '/devices/type/websuite', label: 'Websuites', icon: Globe },
+  { path: '/devices/type/isp_link', label: 'ISP Links', icon: Router },
+  { path: '/devices/type/other', label: 'Other', icon: Box },
+  { path: '/devices/groups', label: 'Groups', icon: Package },
+]
+
 const allNavSections: NavSection[] = [
   {
     id: 'devices',
     label: 'Devices',
     icon: Package,
-    items: [{ path: '/devices', label: 'Inventory', icon: Package }],
+    items: deviceNavItems,
     visible: ({ isTechnician, isViewer }) => isTechnician || isViewer,
   },
   {
@@ -78,6 +103,7 @@ const allNavSections: NavSection[] = [
     icon: Users,
     items: [
       { path: '/clients', label: 'Clients', icon: Users },
+      { path: '/mail', label: 'Mail', icon: Mail },
       { path: '/subscriptions', label: 'Subscriptions', icon: ClipboardList },
       { path: '/plans', label: 'Plans', icon: FileText },
       { path: '/invoices', label: 'Invoices', icon: CreditCard },
@@ -111,8 +137,19 @@ const allNavSections: NavSection[] = [
 const pageMeta: Record<string, { title: string }> = {
   '/': { title: 'Dashboard' },
   '/search': { title: 'Search' },
-  '/devices': { title: 'Inventory' },
+  '/devices/type/car_tracker': { title: 'Car Trackers' },
+  '/devices/type/ip_camera': { title: 'IP Cameras' },
+  '/devices/type/starlink': { title: 'Starlinks' },
+  '/devices/type/wifi_access_point': { title: 'WiFi Access Points' },
+  '/devices/type/tv': { title: 'TVs' },
+  '/devices/type/drone': { title: 'Drones' },
+  '/devices/type/printer': { title: 'Printers' },
+  '/devices/type/websuite': { title: 'Websuites' },
+  '/devices/type/isp_link': { title: 'ISP Links' },
+  '/devices/type/other': { title: 'Other' },
+  '/devices/groups': { title: 'Groups' },
   '/clients': { title: 'Clients' },
+  '/mail': { title: 'Mail' },
   '/subscriptions': { title: 'Subscriptions' },
   '/plans': { title: 'Plans' },
   '/providers': { title: 'Services' },
@@ -140,6 +177,7 @@ function getPageMeta(path: string) {
 }
 
 function getSectionForPath(path: string, sections: NavSection[]): string | null {
+  if (path.startsWith('/devices')) return 'devices'
   for (const section of sections) {
     if (section.items.some((i) => path === i.path || (i.path !== '/' && path.startsWith(i.path)))) {
       return section.id
@@ -512,6 +550,8 @@ export function AppLayout({ children, profile }: AppLayoutProps) {
                           'renewal_due',
                           'subscription_ending_soon',
                           'device_maintenance_long',
+                          'client_mail_sent',
+                          'client_mail_broadcast',
                         ]
                         return (
                           <ul className="divide-y divide-black/5">
