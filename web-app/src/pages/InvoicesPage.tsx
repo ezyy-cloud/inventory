@@ -141,7 +141,9 @@ export function InvoicesPage() {
   useEffect(() => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
-      if (next.get('q') !== searchQuery || next.get('status') !== (statusFilter ?? '')) next.set('page', '1')
+      const urlQ = next.get('q') ?? ''
+      const urlStatus = next.get('status') ?? ''
+      if (urlQ !== searchQuery || urlStatus !== statusFilter) next.set('page', '1')
       return next
     })
   }, [searchQuery, statusFilter, setSearchParams])

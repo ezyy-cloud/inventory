@@ -81,7 +81,8 @@ export function ClientsPage() {
   useEffect(() => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
-      if (next.get('q') !== searchQuery) next.set('page', '1')
+      const urlQ = next.get('q') ?? ''
+      if (urlQ !== searchQuery) next.set('page', '1')
       return next
     })
   }, [searchQuery, setSearchParams])
