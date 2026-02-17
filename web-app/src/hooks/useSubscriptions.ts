@@ -25,6 +25,8 @@ export type SubscriptionsListParams = {
   pageSize?: number
   search?: string
   status?: string
+  /** Filter by device type (subscription's device) */
+  deviceType?: string
   sortBy?: 'plan_name' | 'start_date' | 'updated_at'
   sortOrder?: 'asc' | 'desc'
   /** Filter: end_date within the next N days */
@@ -96,16 +98,21 @@ export function useSubscriptionsList(params: SubscriptionsListParams = {}) {
     pageSize = 25,
     search,
     status,
+    deviceType,
     sortBy = 'plan_name',
     sortOrder = 'desc',
     endWithinDays,
   } = params
 
   return useQuery({
-    queryKey: ['subscriptions-list', page, pageSize, search ?? '', status ?? '', sortBy, sortOrder, endWithinDays ?? null],
+    queryKey: ['subscriptions-list', page, pageSize, search ?? '', status ?? '', deviceType ?? null, sortBy, sortOrder, endWithinDays ?? null],
     queryFn: async () => {
       const from = (page - 1) * pageSize
       const to = from + pageSize - 1
+
+      const devicesSelect = deviceType
+        ? 'devices!inner(id, name, identifier, device_type)'
+        : 'devices(id, name, identifier, device_type)'
 
       let query = supabase
         .from('subscriptions')
@@ -113,7 +120,7 @@ export function useSubscriptionsList(params: SubscriptionsListParams = {}) {
           `
           *,
           clients(id, name),
-          devices(id, name, identifier, device_type),
+          ${devicesSelect},
           subscription_plans(id, name, billing_cycle, amount, applicable_device_types)
         `,
           { count: 'exact' }
@@ -123,6 +130,10 @@ export function useSubscriptionsList(params: SubscriptionsListParams = {}) {
 
       if (status) {
         query = query.eq('status', status)
+      }
+
+      if (deviceType) {
+        query = query.eq('devices.device_type', deviceType)
       }
 
       if (endWithinDays != null && endWithinDays > 0) {

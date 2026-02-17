@@ -13,7 +13,20 @@ import { useSubscriptionPlans, useDefaultPlansPerDeviceType } from '../hooks/use
 import { calculateMRR } from '../lib/mrr'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
-import type { DeviceType } from '../types'
+import { DEVICE_TYPE_LABELS, type DeviceType } from '../types'
+
+const DEVICE_TYPES: DeviceType[] = [
+  'car_tracker',
+  'ip_camera',
+  'starlink',
+  'wifi_access_point',
+  'tv',
+  'drone',
+  'printer',
+  'websuite',
+  'isp_link',
+  'other',
+]
 
 const inputClass = 'w-full rounded-2xl border border-black/15 bg-white px-4 py-3 text-black'
 const labelClass = 'block text-xs tracking-wide text-black/60 mt-3 first:mt-0'
@@ -24,11 +37,12 @@ function parseSubscriptionsListParams(searchParams: URLSearchParams) {
   const pageSize = Math.min(100, Math.max(10, Number.parseInt(searchParams.get('pageSize') ?? String(DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE))
   const q = searchParams.get('q') ?? ''
   const status = searchParams.get('status') ?? ''
+  const deviceType = searchParams.get('device_type') ?? ''
   const sort = (searchParams.get('sort') ?? 'plan_name') as 'plan_name' | 'start_date' | 'updated_at'
   const order = (searchParams.get('order') ?? 'desc') as 'asc' | 'desc'
   const endWithin = searchParams.get('end_within')
   const endWithinDays = endWithin ? Math.max(1, Number.parseInt(endWithin, 10) || 30) : undefined
-  return { page, pageSize, q, status, sort, order, endWithinDays }
+  return { page, pageSize, q, status, deviceType: deviceType || undefined, sort, order, endWithinDays }
 }
 
 function MiniMetric({ label, value }: { label: string; value: string }) {
@@ -42,7 +56,7 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
 
 export function SubscriptionsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const { page, pageSize, q: searchQuery, status: statusFilter, sort: sortBy, order: sortOrder, endWithinDays } = parseSubscriptionsListParams(searchParams)
+  const { page, pageSize, q: searchQuery, status: statusFilter, deviceType: deviceTypeFilter, sort: sortBy, order: sortOrder, endWithinDays } = parseSubscriptionsListParams(searchParams)
   const [searchInput, setSearchInput] = useState(searchQuery)
   const debouncedSearch = useDebouncedValue(searchInput, 350)
   useEffect(() => {
@@ -86,6 +100,7 @@ export function SubscriptionsPage() {
     pageSize,
     search: debouncedSearch.trim() || undefined,
     status: statusFilter || undefined,
+    deviceType: deviceTypeFilter,
     sortBy,
     sortOrder,
     endWithinDays,
@@ -121,12 +136,19 @@ export function SubscriptionsPage() {
       const next = new URLSearchParams(prev)
       const urlQ = next.get('q') ?? ''
       const urlStatus = next.get('status') ?? ''
+      const urlDeviceType = next.get('device_type') ?? ''
       const urlEndWithin = next.get('end_within') ?? ''
       const expectedEndWithin = endWithinDays != null ? String(endWithinDays) : ''
-      if (urlQ !== searchQuery || urlStatus !== (statusFilter ?? '') || urlEndWithin !== expectedEndWithin) next.set('page', '1')
+      if (
+        urlQ !== searchQuery ||
+        urlStatus !== (statusFilter ?? '') ||
+        urlDeviceType !== (deviceTypeFilter ?? '') ||
+        urlEndWithin !== expectedEndWithin
+      )
+        next.set('page', '1')
       return next
     })
-  }, [searchQuery, statusFilter, endWithinDays, setSearchParams])
+  }, [searchQuery, statusFilter, deviceTypeFilter, endWithinDays, setSearchParams])
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -188,6 +210,19 @@ export function SubscriptionsPage() {
               <option value={100}>100</option>
             </select>
             <select
+              aria-label="Filter by device type"
+              value={deviceTypeFilter ?? 'all'}
+              onChange={(e) => setParams({ device_type: e.target.value === 'all' ? undefined : e.target.value, page: 1 })}
+              className="rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold tracking-wide text-black"
+            >
+              <option value="all">All device types</option>
+              {DEVICE_TYPES.map((dt) => (
+                <option key={dt} value={dt}>
+                  {DEVICE_TYPE_LABELS[dt]}
+                </option>
+              ))}
+            </select>
+            <select
               aria-label="Filter by status"
               value={statusFilter ?? 'all'}
               onChange={(e) => setParams({ status: e.target.value === 'all' ? undefined : e.target.value, page: 1 })}
@@ -232,12 +267,14 @@ export function SubscriptionsPage() {
           ) : paginatedSubs.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm text-black/60">
-                {(searchQuery || statusFilter) ? 'No subscriptions match your filters.' : 'No subscriptions.'}
+                {searchQuery || statusFilter || deviceTypeFilter
+                  ? 'No subscriptions match your filters.'
+                  : 'No subscriptions.'}
               </p>
-              {(searchQuery || statusFilter) && (
+              {(searchQuery || statusFilter || deviceTypeFilter) && (
                 <button
                   type="button"
-                  onClick={() => setParams({ q: undefined, status: undefined, page: 1 })}
+                  onClick={() => setParams({ q: undefined, status: undefined, device_type: undefined, page: 1 })}
                   className="mt-3 text-xs font-semibold tracking-wide text-black underline"
                 >
                   Clear filters
