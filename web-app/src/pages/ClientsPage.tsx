@@ -273,9 +273,9 @@ export function ClientsPage() {
                   >
                     <p className="text-sm font-semibold text-black">{client.name}</p>
                     <p className="text-xs text-black/60">{client.industry ?? '—'}</p>
-                    <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-black/60">
-                      <span>{client.email ?? '—'}</span>
-                      <span>{client.phone ?? '—'}</span>
+                    <div className="mt-2 flex min-w-0 flex-wrap items-center gap-4 break-words text-xs text-black/60">
+                      <span className="min-w-0 break-words">{client.email ?? '—'}</span>
+                      <span className="min-w-0 break-words">{client.phone ?? '—'}</span>
                     </div>
                   </Link>
                   <div className="flex shrink-0 items-center gap-2">

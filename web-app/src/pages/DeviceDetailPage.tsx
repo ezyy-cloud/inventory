@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import { useParams, Link } from 'react-router-dom'
 import { useState } from 'react'
 import { ConfirmModal } from '../components/ConfirmModal'
+import { InfoCard } from '../components/InfoCard'
 import { QueryErrorBanner } from '../components/QueryErrorBanner'
 import { StatusPill } from '../components/StatusPill'
 import { useDevice } from '../hooks/useDevices'
@@ -18,15 +19,6 @@ import { useProviderPlans } from '../hooks/useProviderPlans'
 import { useRole } from '../context/RoleContext'
 import { supabase } from '../lib/supabaseClient'
 import type { DeviceType, DeviceWithDetails } from '../types'
-
-function InfoCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-black/10 bg-black/5 p-4">
-      <p className="text-xs tracking-wide text-black/60">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-black">{value}</p>
-    </div>
-  )
-}
 
 function formatAttr(v: string | number | boolean | null | undefined): string {
   if (v == null) return '—'
@@ -464,10 +456,10 @@ export function DeviceDetailPage() {
             <h3 className="text-lg font-semibold text-black">Provider plan</h3>
             <div className="mt-5">
               {activeProviderPlan ? (
-                <div className="rounded-2xl border border-black/10 bg-black/5 px-4 py-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-black">
+                <div className="min-w-0 rounded-2xl border border-black/10 bg-black/5 px-4 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="break-words text-sm font-semibold text-black">
                         {(activeProviderPlan as { provider_plans?: { name: string; providers?: { name: string } | null } })
                           .provider_plans?.name ?? '—'}
                       </p>
@@ -548,10 +540,10 @@ export function DeviceDetailPage() {
                 devicePayments.map((p) => (
                   <div
                     key={p.id}
-                    className="rounded-2xl border border-black/10 bg-black/5 px-4 py-3"
+                    className="min-w-0 rounded-2xl border border-black/10 bg-black/5 px-4 py-3"
                   >
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-black">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="min-w-0 break-words text-sm font-semibold text-black">
                         {(p as { providers?: { name: string } }).providers?.name ?? '—'}
                       </p>
                       <StatusPill value={p.status} />

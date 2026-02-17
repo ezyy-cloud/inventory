@@ -23,9 +23,9 @@ const PAGE_SIZE = 10
 
 function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-black/10 bg-black/5 px-4 py-3">
+    <div className="min-w-0 rounded-2xl border border-black/10 bg-black/5 px-4 py-3">
       <p className="text-xs tracking-wide text-black/60">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-black">{value}</p>
+      <p className="mt-2 break-words text-lg font-semibold text-black">{value}</p>
     </div>
   )
 }

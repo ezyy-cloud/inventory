@@ -199,16 +199,16 @@ export function ReportsPage() {
           </button>
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-black/10 bg-black/5 p-4">
-            <p className="text-sm font-semibold text-black">Monthly finance pack</p>
+          <div className="min-w-0 rounded-2xl border border-black/10 bg-black/5 p-4">
+            <p className="break-words text-sm font-semibold text-black">Monthly finance pack</p>
             <p className="mt-1 text-xs text-black/60">Coming soon</p>
           </div>
-          <div className="rounded-2xl border border-black/10 bg-black/5 p-4">
-            <p className="text-sm font-semibold text-black">Device uptime</p>
+          <div className="min-w-0 rounded-2xl border border-black/10 bg-black/5 p-4">
+            <p className="break-words text-sm font-semibold text-black">Device uptime</p>
             <p className="mt-1 text-xs text-black/60">Coming soon</p>
           </div>
-          <div className="rounded-2xl border border-black/10 bg-black/5 p-4">
-            <p className="text-sm font-semibold text-black">Provider spend</p>
+          <div className="min-w-0 rounded-2xl border border-black/10 bg-black/5 p-4">
+            <p className="break-words text-sm font-semibold text-black">Provider spend</p>
             <button
               type="button"
               onClick={handleExportProviderSpend}

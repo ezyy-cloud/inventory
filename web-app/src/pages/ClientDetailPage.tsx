@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useRole } from '../context/RoleContext'
+import { InfoCard } from '../components/InfoCard'
 import { QueryErrorBanner } from '../components/QueryErrorBanner'
 import { StatusPill } from '../components/StatusPill'
 import { useClient, useUpdateClient } from '../hooks/useClients'
@@ -12,15 +13,6 @@ import { useSubscriptionPlans } from '../hooks/useSubscriptionPlans'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 import type { DeviceType } from '../types'
-
-function InfoCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-black/10 bg-black/5 p-4">
-      <p className="text-xs tracking-wide text-black/60">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-black">{value}</p>
-    </div>
-  )
-}
 
 export function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -132,9 +124,9 @@ export function ClientDetailPage() {
             <InfoCard label="Tax number" value={client.tax_number ?? '—'} />
           </div>
           {client.notes ? (
-            <div className="mt-6">
+            <div className="mt-6 min-w-0">
               <p className="text-sm font-semibold text-black">Notes</p>
-              <p className="mt-1 text-sm text-black/70">{client.notes}</p>
+              <p className="mt-1 break-words text-sm text-black/70">{client.notes}</p>
             </div>
           ) : null}
         </div>

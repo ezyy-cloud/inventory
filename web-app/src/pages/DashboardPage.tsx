@@ -56,9 +56,9 @@ function MiniBar({ value }: { value: number }) {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card-shadow rounded-2xl border border-black/10 bg-white p-6">
+    <div className="min-w-0 card-shadow rounded-2xl border border-black/10 bg-white p-6">
       <p className="text-xs tracking-wide text-black/60">{label}</p>
-      <p className="mt-3 text-2xl font-semibold text-black">{value}</p>
+      <p className="mt-3 break-words text-2xl font-semibold text-black">{value}</p>
     </div>
   )
 }
