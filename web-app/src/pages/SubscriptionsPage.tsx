@@ -111,6 +111,7 @@ export function SubscriptionsPage() {
   const { rows: paginatedSubs, totalCount } = listData ?? { rows: [], totalCount: 0 }
   const [changePlanSub, setChangePlanSub] = useState<typeof paginatedSubs[0] | null>(null)
   const [changePlanId, setChangePlanId] = useState('')
+  const [changePlanRenewalDate, setChangePlanRenewalDate] = useState('')
   const changePlanDeviceType = (changePlanSub as { devices?: { device_type?: string } | null } | null)?.devices?.device_type as DeviceType | undefined
   const { data: changePlanOptions } = useSubscriptionPlans(changePlanDeviceType)
   const activeCount = (subscriptions ?? []).filter((s) => s.status === 'active').length
@@ -265,6 +266,7 @@ export function SubscriptionsPage() {
                         onClick={() => {
                           setChangePlanSub(sub)
                           setChangePlanId(sub.plan_id ?? '')
+                          setChangePlanRenewalDate(sub.next_invoice_date ?? new Date().toISOString().slice(0, 10))
                         }}
                         className="text-xs font-semibold tracking-wide text-black/70 hover:underline"
                       >
@@ -386,13 +388,25 @@ export function SubscriptionsPage() {
                 </option>
               ))}
             </select>
+            <label className={labelClass}>Renewal date</label>
+            <input
+              type="date"
+              value={changePlanRenewalDate}
+              onChange={(e) => setChangePlanRenewalDate(e.target.value)}
+              className={inputClass}
+              aria-label="Renewal date"
+            />
             <div className="flex gap-3">
               <button
                 type="button"
                 disabled={!changePlanId || updateSub.isPending}
                 onClick={async () => {
                   if (!changePlanId) return
-                  await updateSub.mutateAsync({ id: changePlanSub.id, plan_id: changePlanId })
+                  await updateSub.mutateAsync({
+                    id: changePlanSub.id,
+                    plan_id: changePlanId,
+                    next_invoice_date: changePlanRenewalDate || null,
+                  })
                   setChangePlanSub(null)
                 }}
                 className="rounded-2xl bg-black px-6 py-2 text-sm font-semibold tracking-wide text-white transition duration-200 hover:bg-black/90 active:scale-[0.98] disabled:opacity-50"

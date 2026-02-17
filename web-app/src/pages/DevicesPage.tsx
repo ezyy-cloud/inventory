@@ -301,6 +301,7 @@ export function DevicesPage() {
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false)
   const [bulkAssignClientId, setBulkAssignClientId] = useState('')
   const [bulkAssignPlanId, setBulkAssignPlanId] = useState('')
+  const [bulkAssignStartDate, setBulkAssignStartDate] = useState('')
   const { addToast } = useToast()
   const { isViewer } = useRole()
   const bulkStatus = useBulkUpdateDeviceStatus()
@@ -355,6 +356,7 @@ export function DevicesPage() {
           clientId: bulkAssignClientId,
           planId: bulkAssignPlanId,
           assignedBy: user?.id ?? undefined,
+          startDate: bulkAssignStartDate || undefined,
         })
         assigned += 1
       } catch {
@@ -366,6 +368,7 @@ export function DevicesPage() {
     setBulkAssignOpen(false)
     setBulkAssignClientId('')
     setBulkAssignPlanId('')
+    setBulkAssignStartDate('')
   }
   const handleExportSelected = () => {
     const toExport = devices.filter((d) => selectedIds.has(d.id))
@@ -445,7 +448,10 @@ export function DevicesPage() {
             </button>
             <button
               type="button"
-              onClick={() => setBulkAssignOpen(true)}
+              onClick={() => {
+                setBulkAssignStartDate(new Date().toISOString().slice(0, 10))
+                setBulkAssignOpen(true)
+              }}
               className="rounded-full border border-black/20 bg-white px-3 py-1.5 text-xs font-semibold tracking-wide whitespace-nowrap text-black transition duration-200 hover:bg-black/5 active:scale-[0.98]"
             >
               Assign to client
@@ -836,12 +842,21 @@ export function DevicesPage() {
               value={bulkAssignPlanId}
               onChange={(e) => setBulkAssignPlanId(e.target.value)}
               className="w-full rounded-2xl border border-black/15 bg-white px-4 py-3 text-black"
+              aria-label="Select plan"
             >
               <option value="">Select plan</option>
               {(plans ?? []).map((p) => (
                 <option key={p.id} value={p.id}>{p.name} — USD {p.amount.toLocaleString()} / {p.billing_cycle}</option>
               ))}
             </select>
+            <label className="block text-xs font-semibold tracking-wide text-black/50 text-black/60">Subscription start date</label>
+            <input
+              type="date"
+              value={bulkAssignStartDate}
+              onChange={(e) => setBulkAssignStartDate(e.target.value)}
+              className="w-full rounded-2xl border border-black/15 bg-white px-4 py-3 text-black"
+              aria-label="Subscription start date"
+            />
             <p className="text-xs text-black/60">Only devices currently in stock will be assigned.</p>
             <div className="flex gap-3">
               <button

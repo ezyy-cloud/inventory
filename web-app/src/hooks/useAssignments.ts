@@ -47,14 +47,17 @@ export function useAssignDevice() {
       planId,
       notes,
       assignedBy,
+      startDate: startDateParam,
     }: {
       deviceId: string
       clientId: string
       planId: string
       notes?: string | null
       assignedBy?: string | null
+      /** Subscription start date (defaults to today). */
+      startDate?: string | null
     }) => {
-      const startDate = new Date().toISOString().slice(0, 10)
+      const startDate = startDateParam ?? new Date().toISOString().slice(0, 10)
 
       const { data: plan, error: planErr } = await supabase
         .from('subscription_plans')

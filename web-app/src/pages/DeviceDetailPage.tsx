@@ -148,6 +148,7 @@ export function DeviceDetailPage() {
   const [showAssign, setShowAssign] = useState(false)
   const [assignClientId, setAssignClientId] = useState('')
   const [assignPlanId, setAssignPlanId] = useState('')
+  const [assignStartDate, setAssignStartDate] = useState('')
   const [assignNotes, setAssignNotes] = useState('')
   const [showProviderPlanAssign, setShowProviderPlanAssign] = useState(false)
   const [providerPlanId, setProviderPlanId] = useState('')
@@ -217,10 +218,12 @@ export function DeviceDetailPage() {
         planId: assignPlanId,
         notes: assignNotes || undefined,
         assignedBy: user?.id,
+        startDate: assignStartDate || undefined,
       })
       setShowAssign(false)
       setAssignClientId('')
       setAssignPlanId('')
+      setAssignStartDate('')
       setAssignNotes('')
     } catch (e) {
       console.error(e)
@@ -340,6 +343,7 @@ export function DeviceDetailPage() {
                   <button
                     onClick={() => {
                       setAssignPlanId(device != null && defaultPlansMap?.[device.device_type] ? defaultPlansMap[device.device_type] ?? '' : '')
+                      setAssignStartDate(new Date().toISOString().slice(0, 10))
                       setShowAssign(true)
                     }}
                     className="rounded-full bg-black px-3 py-1.5 text-xs font-semibold tracking-wide whitespace-nowrap text-white transition duration-200 hover:bg-black/90 active:scale-[0.98]"
@@ -368,6 +372,7 @@ export function DeviceDetailPage() {
                   value={assignPlanId}
                   onChange={(e) => setAssignPlanId(e.target.value)}
                   className="mt-1 w-full rounded-2xl border border-black/15 bg-white px-4 py-3 text-black"
+                  aria-label="Select plan"
                 >
                   <option value="">Select plan</option>
                   {(plans ?? []).map((p) => (
@@ -376,6 +381,14 @@ export function DeviceDetailPage() {
                     </option>
                   ))}
                 </select>
+                <label className="mt-3 block text-xs tracking-wide text-black/60">Subscription start date</label>
+                <input
+                  type="date"
+                  value={assignStartDate}
+                  onChange={(e) => setAssignStartDate(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-black/15 bg-white px-4 py-3 text-black"
+                  aria-label="Subscription start date"
+                />
                 {selectedPlan && (
                   <p className="mt-2 text-xs text-black/60">
                     {selectedPlan.amount > 0
@@ -403,6 +416,7 @@ export function DeviceDetailPage() {
                     onClick={() => {
                       setShowAssign(false)
                       setAssignClientId('')
+                      setAssignStartDate('')
                       setAssignNotes('')
                     }}
                     className="rounded-2xl border border-black/15 bg-white px-4 py-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:bg-black/5 active:scale-[0.98]"

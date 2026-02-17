@@ -217,6 +217,7 @@ export function useUpdateSubscription() {
       void queryClient.invalidateQueries({ queryKey: ['subscriptions'] })
       void queryClient.invalidateQueries({ queryKey: ['subscriptions-list'] })
       void queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      void queryClient.invalidateQueries({ queryKey: ['renewal-alerts'] })
     },
   })
 }
