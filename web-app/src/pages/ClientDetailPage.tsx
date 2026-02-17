@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useRole } from '../context/RoleContext'
 import { QueryErrorBanner } from '../components/QueryErrorBanner'
-import { useClient } from '../hooks/useClients'
+import { StatusPill } from '../components/StatusPill'
+import { useClient, useUpdateClient } from '../hooks/useClients'
 import { useSubscriptionsByClient } from '../hooks/useSubscriptions'
 import { useInvoicesByClient } from '../hooks/useInvoices'
 import { useAssignDevice } from '../hooks/useAssignments'
@@ -31,6 +32,7 @@ export function ClientDetailPage() {
   const { data: clientSubs = [] } = useSubscriptionsByClient(id ?? null)
   const { data: clientInvoices = [] } = useInvoicesByClient(id ?? null)
   const { isViewer } = useRole()
+  const updateClient = useUpdateClient()
   const assignDevice = useAssignDevice()
   const { data: availableDevices } = useQuery({
     queryKey: ['devices-in-stock'],
@@ -96,18 +98,31 @@ export function ClientDetailPage() {
           <ChevronRight className="h-4 w-4 rotate-180" /> Back
         </Link>
         {!isViewer && (
-          <Link
-            to={`/clients/${client.id}/edit`}
-            className="rounded-full bg-black px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-white transition duration-200 hover:bg-black/90 active:scale-[0.98]"
-          >
-            Edit Client
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => updateClient.mutate({ id: client.id, is_active: !(client.is_active !== false) })}
+              disabled={updateClient.isPending}
+              className="rounded-full border border-black/20 bg-white px-4 py-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:bg-black/5 disabled:opacity-50"
+            >
+              {client.is_active !== false ? 'Mark inactive' : 'Mark active'}
+            </button>
+            <Link
+              to={`/clients/${client.id}/edit`}
+              className="rounded-full bg-black px-4 py-2 text-xs font-semibold tracking-wide whitespace-nowrap text-white transition duration-200 hover:bg-black/90 active:scale-[0.98]"
+            >
+              Edit Client
+            </Link>
+          </div>
         )}
       </div>
 
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
-          <h2 className="text-xl font-semibold text-black">{client.name}</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold text-black">{client.name}</h2>
+            <StatusPill value={client.is_active !== false ? 'active' : 'inactive'} />
+          </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <InfoCard label="Industry" value={client.industry ?? '—'} />
             <InfoCard label="Contact" value={client.contact_name ?? '—'} />

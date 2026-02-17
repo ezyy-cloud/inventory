@@ -39,6 +39,7 @@ export interface Client {
   billing_address: string | null
   tax_number: string | null
   notes: string | null
+  is_active: boolean
   created_at: string
   updated_at: string
 }

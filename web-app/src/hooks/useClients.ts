@@ -10,6 +10,8 @@ export type ClientsListParams = {
   sortBy?: 'name' | 'created_at' | 'updated_at'
   sortOrder?: 'asc' | 'desc'
   tagIds?: string[]
+  /** true = active only, false = inactive only, undefined = all */
+  active?: boolean
 }
 
 export function useClients() {
@@ -34,21 +36,23 @@ export function useClientsList(params: ClientsListParams = {}) {
     sortBy = 'name',
     sortOrder = 'desc',
     tagIds,
+    active,
   } = params
 
-  const useRpc = tagIds != null && tagIds.length > 0
+  const useRpc = (tagIds != null && tagIds.length > 0) || active !== undefined
 
   return useQuery({
-    queryKey: ['clients-list', page, pageSize, search ?? '', sortBy, sortOrder, useRpc ? tagIds : null],
+    queryKey: ['clients-list', page, pageSize, search ?? '', sortBy, sortOrder, useRpc ? tagIds : null, active],
     queryFn: async () => {
-      if (useRpc && tagIds) {
+      if (useRpc) {
         const { data, error } = await supabase.rpc('get_clients_list_filtered', {
           p_page_size: pageSize,
           p_offset: (page - 1) * pageSize,
           p_search: search?.trim() || null,
           p_sort_by: sortBy,
           p_sort_order: sortOrder,
-          p_tag_ids: tagIds,
+          p_tag_ids: tagIds ?? null,
+          p_active: active ?? null,
         })
         if (error) throw error
         const row = Array.isArray(data) ? data[0] : data
@@ -65,6 +69,10 @@ export function useClientsList(params: ClientsListParams = {}) {
         .select('*', { count: 'exact' })
         .order(sortBy, { ascending: sortOrder === 'asc', nullsFirst: false })
         .range(from, to)
+
+      if (active !== undefined) {
+        query = query.eq('is_active', active)
+      }
 
       const searchTrim = search?.trim()
       if (searchTrim) {
@@ -130,6 +138,7 @@ export function useUpdateClient() {
     },
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['clients'] })
+      void queryClient.invalidateQueries({ queryKey: ['clients-list'] })
       void queryClient.invalidateQueries({ queryKey: ['client', data?.id] })
     },
   })

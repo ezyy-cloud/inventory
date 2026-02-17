@@ -6,7 +6,7 @@ import { StatusPill } from '../components/StatusPill'
 import { Modal } from '../components/Modal'
 import { useRole } from '../context/RoleContext'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { useClientsList } from '../hooks/useClients'
+import { useClientsList, useUpdateClient } from '../hooks/useClients'
 import { useClientTags, useCreateClientTag } from '../hooks/useClientTags'
 import { useSavedViews, useSaveView } from '../hooks/useSavedViews'
 
@@ -19,12 +19,15 @@ function parseClientListParams(searchParams: URLSearchParams) {
   const sort = (searchParams.get('sort') ?? 'name') as 'name' | 'created_at' | 'updated_at'
   const order = (searchParams.get('order') ?? 'desc') as 'asc' | 'desc'
   const tagIds = searchParams.getAll('tag').filter(Boolean)
-  return { page, pageSize, q, sort, order, tagIds }
+  const statusParam = searchParams.get('status') ?? 'active'
+  const active: boolean | undefined =
+    statusParam === 'all' ? undefined : statusParam === 'inactive' ? false : true
+  return { page, pageSize, q, sort, order, tagIds, active, statusParam }
 }
 
 export function ClientsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const { page, pageSize, q: searchQuery, sort: sortBy, order: sortOrder, tagIds: urlTagIds } = parseClientListParams(searchParams)
+  const { page, pageSize, q: searchQuery, sort: sortBy, order: sortOrder, tagIds: urlTagIds, active: activeFilter, statusParam } = parseClientListParams(searchParams)
   const [searchInput, setSearchInput] = useState(searchQuery)
   const [showTagModal, setShowTagModal] = useState(false)
   const [newTagName, setNewTagName] = useState('')
@@ -49,7 +52,7 @@ export function ClientsPage() {
         }
         for (const [k, v] of Object.entries(updates)) {
           if (k === 'tagIds') continue
-          if (v === undefined || v === '' || (k === 'page' && v === 1)) next.delete(k)
+          if (v === undefined || v === '' || (k === 'page' && v === 1) || (k === 'status' && v === 'active')) next.delete(k)
           else next.set(k, String(v))
         }
         if (!next.has('page')) next.set('page', '1')
@@ -66,6 +69,7 @@ export function ClientsPage() {
 
   const { data: tags = [] } = useClientTags()
   const createTag = useCreateClientTag()
+  const updateClient = useUpdateClient()
   const { data: clientsData, isLoading, isError, error, refetch } = useClientsList({
     page,
     pageSize,
@@ -73,6 +77,7 @@ export function ClientsPage() {
     sortBy,
     sortOrder,
     tagIds: urlTagIds.length > 0 ? urlTagIds : undefined,
+    active: activeFilter,
   })
 
   const { isViewer } = useRole()
@@ -82,10 +87,11 @@ export function ClientsPage() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
       const urlQ = next.get('q') ?? ''
-      if (urlQ !== searchQuery) next.set('page', '1')
+      const urlStatus = next.get('status') ?? 'active'
+      if (urlQ !== searchQuery || urlStatus !== statusParam) next.set('page', '1')
       return next
     })
-  }, [searchQuery, setSearchParams])
+  }, [searchQuery, statusParam, setSearchParams])
 
   return (
     <div className="space-y-6">
@@ -118,6 +124,16 @@ export function ClientsPage() {
               <option value={100}>100</option>
             </select>
             <select
+              aria-label="Filter by status"
+              value={statusParam}
+              onChange={(e) => setParams({ status: e.target.value as 'active' | 'inactive' | 'all', page: 1 })}
+              className="rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:bg-black/5 active:scale-[0.98]"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="all">All</option>
+            </select>
+            <select
               aria-label="Filter by tag"
               value=""
               onChange={(e) => {
@@ -148,6 +164,8 @@ export function ClientsPage() {
                     if (p.q != null && p.q !== '') next.set('q', String(p.q))
                     if (p.sort != null) next.set('sort', String(p.sort))
                     if (p.order != null) next.set('order', String(p.order))
+                    if (p.status != null && p.status !== 'active') next.set('status', String(p.status))
+                    else next.delete('status')
                     if (Array.isArray(p.tagIds)) p.tagIds.forEach((id) => next.append('tag', String(id)))
                     else next.delete('tag')
                     return next
@@ -230,12 +248,12 @@ export function ClientsPage() {
           ) : clients.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm text-black/60">
-                {searchQuery || urlTagIds.length > 0 ? 'No clients match your filters.' : 'No clients yet.'}
+                {searchQuery || urlTagIds.length > 0 || statusParam !== 'active' ? 'No clients match your filters.' : 'No clients yet.'}
               </p>
-              {(searchQuery || urlTagIds.length > 0) && (
+              {(searchQuery || urlTagIds.length > 0 || statusParam !== 'active') && (
                 <button
                   type="button"
-                  onClick={() => setParams({ q: undefined, tagIds: [], page: 1 })}
+                  onClick={() => setParams({ q: undefined, tagIds: [], status: 'active', page: 1 })}
                   className="mt-3 text-xs font-semibold tracking-wide text-black underline"
                 >
                   Clear filters
@@ -261,9 +279,20 @@ export function ClientsPage() {
                     </div>
                   </Link>
                   <div className="flex shrink-0 items-center gap-2">
-                    <StatusPill value="active" />
+                    <StatusPill value={client.is_active !== false ? 'active' : 'inactive'} />
                     {!isViewer && (
                       <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            updateClient.mutate({ id: client.id, is_active: !(client.is_active !== false) })
+                          }}
+                          disabled={updateClient.isPending}
+                          className="rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs font-semibold tracking-wide text-black hover:bg-black/5 disabled:opacity-50"
+                        >
+                          {client.is_active !== false ? 'Mark inactive' : 'Mark active'}
+                        </button>
                         <Link
                           to={`/subscriptions?client=${client.id}`}
                           className="rounded-lg border border-black/15 bg-white px-3 py-1.5 text-xs font-semibold tracking-wide text-black hover:bg-black/5"
@@ -304,7 +333,7 @@ export function ClientsPage() {
               try {
                 await saveView.mutateAsync({
                   name,
-                  params: { page: 1, pageSize, q: searchQuery, sort: sortBy, order: sortOrder, tagIds: urlTagIds },
+                  params: { page: 1, pageSize, q: searchQuery, sort: sortBy, order: sortOrder, status: statusParam, tagIds: urlTagIds },
                   isDefault: savedViewDefault,
                 })
                 setShowSaveViewModal(false)
