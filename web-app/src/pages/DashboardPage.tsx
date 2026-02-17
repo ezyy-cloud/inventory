@@ -19,7 +19,7 @@ import { StatusPill } from '../components/StatusPill'
 import {
   useDashboardStats,
   useDevicesByCategory,
-  useMRRByClient,
+  useMonthlyCostByProviderPlan,
   useMRRByPlan,
   useMRRTrend,
   useOverdueInvoices,
@@ -74,7 +74,7 @@ export function DashboardPage() {
   const { data: mrrTrend } = useMRRTrend(6)
   const { data: devicesByCategory, isLoading: devicesByCategoryLoading } = useDevicesByCategory()
   const { data: mrrByPlan, isLoading: mrrByPlanLoading } = useMRRByPlan()
-  const { data: mrrByClient, isLoading: mrrByClientLoading } = useMRRByClient(10)
+  const { data: costByProviderPlan, isLoading: costByProviderPlanLoading } = useMonthlyCostByProviderPlan(10)
   const { data: statusBreakdown, isLoading: statusBreakdownLoading } = useDeviceStatusBreakdown()
 
   const hasError = statsError ?? renewalsError ?? overdueError
@@ -307,56 +307,59 @@ export function DashboardPage() {
 
         <div className="card-shadow rounded-3xl border border-black/10 bg-white p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-black">Cost centers (MRR by client)</h2>
+            <h2 className="text-lg font-semibold text-black">Cost centers (by provider plan)</h2>
             <Link
-              to="/clients"
+              to="/provider-payments"
               className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-black transition duration-200 hover:opacity-80"
             >
-              View clients <ChevronRight className="h-4 w-4" />
+              View payments <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
-          {mrrByClientLoading ? (
+          {costByProviderPlanLoading ? (
             <p className="mt-6 text-sm text-black/60">Loading…</p>
-          ) : (mrrByClient?.length ?? 0) > 0 ? (
+          ) : (costByProviderPlan?.length ?? 0) > 0 ? (
             <div className="mt-6 space-y-4">
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={(mrrByClient ?? []).map((r) => ({
-                      name: r.client_name.length > 20 ? r.client_name.slice(0, 20) + '…' : r.client_name,
-                      mrr: r.mrr,
-                      fullName: r.client_name,
-                    }))}
+                    data={(costByProviderPlan ?? []).map((r) => {
+                      const label = `${r.plan_name} (${r.provider_name})`
+                      return {
+                        name: label.length > 24 ? label.slice(0, 24) + '…' : label,
+                        monthly_cost: r.monthly_cost,
+                        fullName: label,
+                      }
+                    })}
                     layout="vertical"
                     margin={{ top: 4, right: 60, left: 0, bottom: 4 }}
                   >
                     <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
-                    <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
+                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} />
                     <Tooltip
                       formatter={(value: number | undefined, _n, props: { payload?: { fullName?: string } }) => [
-                        `USD ${(value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-                        props?.payload?.fullName ?? 'MRR',
+                        `USD ${(value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}/mo`,
+                        props?.payload?.fullName ?? 'Monthly cost',
                       ]}
                     />
-                    <Bar dataKey="mrr" fill={CHART_COLORS[1]} radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="monthly_cost" fill={CHART_COLORS[1]} radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
               <ul className="max-h-32 space-y-1 overflow-y-auto text-xs">
-                {(mrrByClient ?? []).map((r) => (
-                  <li key={r.client_id} className="flex justify-between gap-2">
-                    <Link to={`/clients/${r.client_id}`} className="truncate font-medium text-black hover:underline">
-                      {r.client_name}
-                    </Link>
+                {(costByProviderPlan ?? []).map((r) => (
+                  <li key={r.provider_plan_id} className="flex justify-between gap-2">
+                    <span className="truncate font-medium text-black">
+                      {r.plan_name} <span className="text-black/60">({r.provider_name})</span>
+                    </span>
                     <span className="shrink-0 text-black/60">
-                      USD {r.mrr.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      USD {r.monthly_cost.toLocaleString('en-US', { minimumFractionDigits: 2 })}/mo
                     </span>
                   </li>
                 ))}
               </ul>
             </div>
           ) : (
-            <p className="mt-6 text-sm text-black/60">No client MRR data.</p>
+            <p className="mt-6 text-sm text-black/60">No provider plan costs. Assign devices to provider plans to see monthly cost.</p>
           )}
         </div>
       </section>

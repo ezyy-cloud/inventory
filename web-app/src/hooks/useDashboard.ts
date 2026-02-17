@@ -7,6 +7,12 @@ export type DevicesByCategoryRow = { device_type: string; count: number }
 export type MRRByPlanRow = { plan_name: string; mrr: number }
 export type MRRByDeviceTypeRow = { device_type: string; mrr: number }
 export type MRRByClientRow = { client_id: string; client_name: string; mrr: number }
+export type MonthlyCostByProviderPlanRow = {
+  provider_plan_id: string
+  plan_name: string
+  provider_name: string
+  monthly_cost: number
+}
 
 const SEVERITY_ORDER: Record<AlertSeverity, number> = { high: 0, medium: 1, low: 2 }
 
@@ -135,6 +141,54 @@ export function useMRRByClient(limit = 10) {
         .map(([client_id, { name, mrr }]) => ({ client_id, client_name: name, mrr }))
         .filter((r) => r.mrr > 0)
         .sort((a, b) => b.mrr - a.mrr)
+        .slice(0, limit)
+    },
+  })
+}
+
+export function useMonthlyCostByProviderPlan(limit = 10) {
+  return useQuery<MonthlyCostByProviderPlanRow[]>({
+    queryKey: ['dashboard-monthly-cost-by-provider-plan', limit],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('device_provider_plans')
+        .select('provider_plan_id, provider_plans(id, name, amount, billing_cycle, providers(id, name))')
+        .eq('status', 'active')
+      if (error) throw error
+      const byPlan: Record<
+        string,
+        { plan_name: string; provider_name: string; monthly_cost: number }
+      > = {}
+      for (const row of data ?? []) {
+        const raw = row as {
+          provider_plan_id: string
+          provider_plans?:
+            | { id: string; name: string; amount: number; billing_cycle: string; providers?: { name: string } | { name: string }[] | null }
+            | { id: string; name: string; amount: number; billing_cycle: string; providers?: { name: string } | { name: string }[] | null }[]
+            | null
+        }
+        const ppRaw = raw.provider_plans
+        const pp = Array.isArray(ppRaw) ? ppRaw[0] ?? null : ppRaw
+        if (!pp) continue
+        const planId = pp.id
+        const planName = pp.name ?? '—'
+        const providers = pp.providers
+        const providerName = Array.isArray(providers) ? providers[0]?.name ?? '—' : providers?.name ?? '—'
+        const monthly = monthlyEquivalent(pp.amount ?? 0, pp.billing_cycle ?? null)
+        if (!byPlan[planId]) {
+          byPlan[planId] = { plan_name: planName, provider_name: providerName, monthly_cost: 0 }
+        }
+        byPlan[planId].monthly_cost += monthly
+      }
+      return Object.entries(byPlan)
+        .map(([provider_plan_id, v]) => ({
+          provider_plan_id,
+          plan_name: v.plan_name,
+          provider_name: v.provider_name,
+          monthly_cost: v.monthly_cost,
+        }))
+        .filter((r) => r.monthly_cost > 0)
+        .sort((a, b) => b.monthly_cost - a.monthly_cost)
         .slice(0, limit)
     },
   })

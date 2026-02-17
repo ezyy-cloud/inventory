@@ -384,7 +384,10 @@ export function DevicesPage() {
   useEffect(() => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
-      if (next.get('type') !== activeTab || (next.get('status') ?? 'all') !== (statusFilter ?? 'all') || next.get('q') !== searchQuery) {
+      const urlType = next.get('type') ?? 'car_tracker'
+      const urlStatus = next.get('status') ?? 'all'
+      const urlQ = next.get('q') ?? ''
+      if (urlType !== activeTab || urlStatus !== (statusFilter ?? 'all') || urlQ !== searchQuery) {
         next.set('page', '1')
       }
       return next
