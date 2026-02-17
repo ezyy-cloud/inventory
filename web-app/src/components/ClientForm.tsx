@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import type { Client } from '../types'
 import { clientFormSchema, type ClientFormValues } from '../lib/validations/client'
 import type { ClientTag } from '../hooks/useClientTags'
@@ -41,11 +41,12 @@ export function ClientForm({
   selectedTagIds = [],
   onTagsChange,
 }: ClientFormProps) {
+  const formKeys: (keyof ClientFormValues)[] = ['name', 'industry', 'contact_name', 'email', 'phone', 'address', 'billing_address', 'tax_number', 'notes']
+
   const [form, setForm] = useState<ClientFormValues>(() => {
     const from = { ...defaultForm }
     if (initialValues) {
-      const keys: (keyof ClientFormValues)[] = ['name', 'industry', 'contact_name', 'email', 'phone', 'address', 'billing_address', 'tax_number', 'notes']
-      for (const k of keys) {
+      for (const k of formKeys) {
         const v = initialValues[k as keyof typeof initialValues]
         from[k] = (v == null || v === '') ? '' : String(v)
       }
@@ -53,6 +54,17 @@ export function ClientForm({
     return from
   })
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ClientFormValues, string>>>({})
+
+  // When editing, initialValues is undefined until client loads; sync form when it arrives
+  useEffect(() => {
+    if (initialValues == null || !('id' in initialValues) || initialValues.id == null) return
+    const from = { ...defaultForm }
+    for (const k of formKeys) {
+      const v = initialValues[k as keyof typeof initialValues]
+      from[k] = (v == null || v === '') ? '' : String(v)
+    }
+    setForm(from)
+  }, [initialValues?.id])
 
   const handleChange = (key: keyof ClientFormValues, value: string | null) => {
     setForm((p) => ({ ...p, [key]: value ?? '' }))
