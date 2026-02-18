@@ -25,7 +25,7 @@ const inputClass = 'w-full rounded-2xl border border-black/15 bg-white px-4 py-3
 const labelClass = 'block text-xs tracking-wide text-black/60 mt-3 first:mt-0'
 const PAGE_SIZE = 10
 const DEVICE_TYPES: DeviceType[] = [
-  'car_tracker', 'ip_camera', 'starlink', 'wifi_access_point', 'tv', 'drone', 'printer', 'websuite', 'isp_link', 'other',
+  'car_tracker', 'ip_camera', 'starlink', 'wifi_access_point', 'tv', 'drone', 'printer', 'websuite', 'isp_link', 'pos_device', 'other',
 ]
 
 export function ProvidersPage() {

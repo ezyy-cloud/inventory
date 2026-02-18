@@ -85,6 +85,7 @@ const deviceNavItems: NavItem[] = [
   { path: '/devices/type/printer', label: 'Printers', icon: Printer },
   { path: '/devices/type/websuite', label: 'Websuites', icon: Globe },
   { path: '/devices/type/isp_link', label: 'ISP Links', icon: Router },
+  { path: '/devices/type/pos_device', label: 'POS Devices', icon: CreditCard },
   { path: '/devices/type/other', label: 'Other', icon: Box },
   { path: '/devices/groups', label: 'Groups', icon: Package },
 ]
@@ -146,6 +147,7 @@ const pageMeta: Record<string, { title: string }> = {
   '/devices/type/printer': { title: 'Printers' },
   '/devices/type/websuite': { title: 'Websuites' },
   '/devices/type/isp_link': { title: 'ISP Links' },
+  '/devices/type/pos_device': { title: 'POS Devices' },
   '/devices/type/other': { title: 'Other' },
   '/devices/groups': { title: 'Groups' },
   '/clients': { title: 'Clients' },

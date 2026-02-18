@@ -25,6 +25,7 @@ const DEVICE_TYPES: DeviceType[] = [
   'printer',
   'websuite',
   'isp_link',
+  'pos_device',
   'other',
 ]
 

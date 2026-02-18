@@ -12,6 +12,7 @@ export type DeviceType =
   | 'printer'
   | 'websuite'
   | 'isp_link'
+  | 'pos_device'
   | 'other'
 export type SubscriptionStatus = 'active' | 'paused' | 'canceled' | 'expired'
 export type BillingCycle = 'monthly' | 'quarterly' | 'yearly' | 'one_time'
@@ -148,6 +149,16 @@ export interface IspLink {
   modem_pwd: string | null
   ip_address: string | null
   provider: string | null
+}
+
+export interface PosDevice {
+  device_id: string
+  brand: string | null
+  model: string | null
+  terminal_id: string | null
+  ip_address: string | null
+  payment_processor: string | null
+  software_version: string | null
 }
 
 export interface SubscriptionPlan {
@@ -294,6 +305,7 @@ export interface DeviceWithDetails extends Device {
   printer?: Printer | null
   websuite?: Websuite | null
   isp_link?: IspLink | null
+  pos_device?: PosDevice | null
   client?: Client | null
   assignment?: DeviceAssignment | null
 }
@@ -354,5 +366,6 @@ export const DEVICE_TYPE_LABELS: Record<DeviceType, string> = {
   printer: 'Printers',
   websuite: 'Websuites',
   isp_link: 'ISP Links',
+  pos_device: 'POS Devices',
   other: 'Other',
 }

@@ -29,6 +29,7 @@ const DEVICE_TYPES: DeviceType[] = [
   'printer',
   'websuite',
   'isp_link',
+  'pos_device',
   'other',
 ]
 function formatDeviceRow(d: DeviceWithDetails, type: DeviceType): Record<string, string> {
@@ -132,6 +133,15 @@ function formatDeviceRow(d: DeviceWithDetails, type: DeviceType): Record<string,
         ip: t?.ip_address ?? '—',
       }
     }
+    case 'pos_device': {
+      const t = d.pos_device
+      return {
+        ...base,
+        terminal_id: t?.terminal_id ?? '—',
+        brand: t?.brand ?? '—',
+        payment_processor: t?.payment_processor ?? '—',
+      }
+    }
     default:
       return base
   }
@@ -206,6 +216,14 @@ function getColumns(type: DeviceType): { key: string; label: string }[] {
         { key: 'line', label: 'Line' },
         { key: 'location', label: 'Location' },
         { key: 'ip', label: 'IP' },
+        ...commonWithoutName,
+      ]
+    case 'pos_device':
+      return [
+        { key: 'name', label: 'Name' },
+        { key: 'terminal_id', label: 'Terminal ID' },
+        { key: 'brand', label: 'Brand' },
+        { key: 'payment_processor', label: 'Payment processor' },
         ...commonWithoutName,
       ]
     default:

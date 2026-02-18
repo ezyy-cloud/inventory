@@ -132,6 +132,18 @@ function getDeviceAttributeRows(device: DeviceWithDetails): { label: string; val
       { label: 'Modem user', value: formatAttr(isp.modem_user) },
     ]
   }
+  const pos = device.pos_device
+  if (pos) {
+    return [
+      ...base,
+      { label: 'Brand', value: formatAttr(pos.brand) },
+      { label: 'Model', value: formatAttr(pos.model) },
+      { label: 'Terminal ID', value: formatAttr(pos.terminal_id) },
+      { label: 'IP address', value: formatAttr(pos.ip_address) },
+      { label: 'Payment processor', value: formatAttr(pos.payment_processor) },
+      { label: 'Software version', value: formatAttr(pos.software_version) },
+    ]
+  }
   return base
 }
 

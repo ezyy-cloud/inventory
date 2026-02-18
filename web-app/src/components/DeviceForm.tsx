@@ -72,6 +72,14 @@ const DEVICE_TYPE_FIELDS: Record<
     { key: 'modem_pwd', label: 'Modem Password', type: 'password' },
     { key: 'ip_address', label: 'IP Address', type: 'text' },
   ],
+  pos_device: [
+    { key: 'brand', label: 'Brand', type: 'text' },
+    { key: 'model', label: 'Model', type: 'text' },
+    { key: 'terminal_id', label: 'Terminal ID', type: 'text' },
+    { key: 'ip_address', label: 'IP Address', type: 'text' },
+    { key: 'payment_processor', label: 'Payment processor', type: 'text' },
+    { key: 'software_version', label: 'Software version', type: 'text' },
+  ],
   other: [],
 }
 

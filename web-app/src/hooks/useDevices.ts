@@ -13,6 +13,7 @@ const deviceTypeTable: Record<DeviceType, string> = {
   printer: 'printers',
   websuite: 'websuites',
   isp_link: 'isp_links',
+  pos_device: 'pos_devices',
   other: 'other',
 }
 
@@ -82,6 +83,7 @@ export function useDevices(params: DevicesListParams) {
             printer: productTable === 'printers' ? (byDevice[d.id as string] ?? null) : null,
             websuite: productTable === 'websuites' ? (byDevice[d.id as string] ?? null) : null,
             isp_link: productTable === 'isp_links' ? (byDevice[d.id as string] ?? null) : null,
+            pos_device: productTable === 'pos_devices' ? (byDevice[d.id as string] ?? null) : null,
             assignment: activeAssignment,
           } as DeviceWithDetails
         })
@@ -310,7 +312,9 @@ export function useDevice(id: string | null) {
                       ? 'printer'
                       : productTable === 'websuites'
                         ? 'websuite'
-                        : 'isp_link'
+                        : productTable === 'pos_devices'
+                          ? 'pos_device'
+                          : 'isp_link'
 
       const assignments = (device as { device_assignments?: { unassigned_at: string | null }[] })
         .device_assignments

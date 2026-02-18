@@ -14,6 +14,7 @@ const VALID_TYPES: DeviceType[] = [
   'printer',
   'websuite',
   'isp_link',
+  'pos_device',
 ]
 
 export function DeviceFormPage() {
